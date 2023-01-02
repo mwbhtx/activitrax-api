@@ -1,12 +1,12 @@
 const axios = require('axios')
 const { getUserConfig, getUserData, getAppMetaData, setUserConnectionData, addUserConnectionData, searchAuth0UserByQuery, searchAuth0UserByStravaId } = require("../auth0/auth0.service");
 const { fetchSpotifyTracks } = require('../spotify/spotify.service');
+const jwt_decode = require('jwt-decode');
+const stravaClientId = '75032'
 
 const getStravaApiToken = async (uid) => {
     const userData = await searchAuth0UserByStravaId(uid);
-    const refreshToken = userData.app_metadata.connections.strava.refresh_token;
-    const new_access_token = await exchangeRefreshTokenForAccessToken(refreshToken)
-    return new_access_token
+    return userData.app_metadata.connections.strava.access_token;
 }
 
 const exchangeStravaAuthToken = async (uid, auth_token) => {
@@ -16,7 +16,7 @@ const exchangeStravaAuthToken = async (uid, auth_token) => {
         method: "POST",
         url: "https://www.strava.com/oauth/token",
         params: {
-            client_id: process.env.ACTIVITRAX_STRAVA_CLIENT_ID,
+            client_id: stravaClientId,
             client_secret: process.env.ACTIVITRAX_STRAVA_CLIENT_SECRET,
             code: auth_token,
             grant_type: "authorization_code"
@@ -49,7 +49,7 @@ const getStravaWebhookDetails = async () => {
             "Content-Type": "application/json",
         },
         params: {
-            client_id: process.env.ACTIVITRAX_STRAVA_CLIENT_ID,
+            client_id: stravaClientId,
             client_secret: process.env.ACTIVITRAX_STRAVA_CLIENT_SECRET,
         }
 
@@ -72,7 +72,7 @@ const deleteStravaWebhook = async () => {
                 "Content-Type": "application/json",
             },
             params: {
-                client_id: process.env.ACTIVITRAX_STRAVA_CLIENT_ID,
+                client_id: stravaClientId,
                 client_secret: process.env.ACTIVITRAX_STRAVA_CLIENT_SECRET,
                 id: subscription.id
             }
@@ -107,26 +107,23 @@ const processStravaActivityCreated = async (user_id, activity_id) => {
 
     // fetch activity details
     const userData = await searchAuth0UserByQuery(`app_metadata.connections.strava.id:${user_id}`);
+    const spotifyUid = userData.app_metadata.connections.spotify.id;
     const stravaToken = userData.app_metadata.connections.strava.access_token;
     const spotifyToken = userData.app_metadata.connections.spotify.refresh_token;
-    // const stravaApiToken = user_data.connections.strava.access_token;
     const activity = await fetchStravaActivityDetails(stravaToken, activity_id);
     const startdatetime = new Date(activity.start_date);
     const startDateTimeMillis = startdatetime.getTime();
     const endDateTimeMillis = startDateTimeMillis + (activity.elapsed_time * 1000);
-    const trackList = await fetchSpotifyTracks(spotifyToken, startDateTimeMillis, endDateTimeMillis);
-    console.log(activity)
+    const trackList = await fetchSpotifyTracks(spotifyUid, spotifyToken, startDateTimeMillis, endDateTimeMillis);
     let updatedDescriptionString = 'Playlist: \n';
 
-    trackList.forEach( (track, index) => {
-        updatedDescriptionString += `${index+1}. ${track.artist} - ${track.name} \n`;
+    trackList.forEach((track, index) => {
+        updatedDescriptionString += `${index + 1}. ${track.artist} - ${track.name} \n`;
     })
-
     const currentDescription = activity.description;
-
     const appendedDescription = currentDescription + '\n\n' + updatedDescriptionString;
-
     await updateStravaActivity(user_id, activity_id, appendedDescription);
+    console.log('strava activity updated')
 }
 
 const exchangeRefreshTokenForAccessToken = async (refresh_token) => {
@@ -135,7 +132,7 @@ const exchangeRefreshTokenForAccessToken = async (refresh_token) => {
         method: "POST",
         url: "https://www.strava.com/oauth/token",
         params: {
-            client_id: process.env.ACTIVITRAX_STRAVA_CLIENT_ID,
+            client_id: stravaClientId,
             client_secret: process.env.ACTIVITRAX_STRAVA_CLIENT_SECRET,
             refresh_token: refresh_token,
             grant_type: "refresh_token"
@@ -179,9 +176,9 @@ const createStravaWebhook = async () => {
             "Content-Type": "application/json",
         },
         params: {
-            client_id: process.env.ACTIVITRAX_STRAVA_CLIENT_ID,
+            client_id: stravaClientId,
             client_secret: process.env.ACTIVITRAX_STRAVA_CLIENT_SECRET,
-            callback_url: process.env.ACTIVITRAX_STRAVA_WEBOHOOK_CALLBACK_URL,
+            callback_url: process.env.ACTIVITRAX_STRAVA_CALLBACK_URL,
             verify_token: process.env.ACTIVITRAX_STRAVA_WEBOHOOK_VERIFY_TOKEN
         }
 

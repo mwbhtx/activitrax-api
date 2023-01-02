@@ -1,5 +1,8 @@
 const axios = require("axios");
-const { addUserConnectionData, searchAuth0UserBySpotifyId } = require("../auth0/auth0.service");
+const { addUserConnectionData, searchAuth0UserBySpotifyId, updateUserConnectionData } = require("../auth0/auth0.service");
+const jwt_decode = require('jwt-decode');
+const spotifyClientId = '2d496310f6db494791df2b41b9c2342d'
+
 
 const connectSpotifyService = async (user_id, auth_token) => {
 
@@ -9,7 +12,7 @@ const connectSpotifyService = async (user_id, auth_token) => {
         url: 'https://accounts.spotify.com/api/token',
         headers: {
             "Content-Type": "application/x-www-form-urlencoded",
-            "Authorization": "Basic " + (Buffer.from(process.env.ACTIVITRAX_SPOTIFY_CLIENT_ID + ":" + process.env.ACTIVITRAX_SPOTIFY_CLIENT_SECRET).toString("base64"))
+            "Authorization": "Basic " + (Buffer.from(spotifyClientId + ":" + process.env.ACTIVITRAX_SPOTIFY_CLIENT_SECRET).toString("base64"))
         },
         params: {
             code: auth_token,
@@ -39,6 +42,7 @@ const connectSpotifyService = async (user_id, auth_token) => {
 
 const exchangeRefreshTokenForAccessToken = async (refresh_token) => {
 
+    // fetch spotify user access_token / refresh_token if expired
     const reqConfig = {
         method: "POST",
         url: "https://accounts.spotify.com/api/token",
@@ -48,20 +52,30 @@ const exchangeRefreshTokenForAccessToken = async (refresh_token) => {
         params: {
             grant_type: "refresh_token",
             refresh_token: refresh_token,
-            client_id: process.env.ACTIVITRAX_SPOTIFY_CLIENT_ID,
+            client_id: spotifyClientId,
             client_secret: process.env.ACTIVITRAX_SPOTIFY_CLIENT_SECRET,
         }
 
     }
 
     const response = await axios(reqConfig)
-    return response.data.access_token
+
+    // save new refresh token & access token
+    const new_refresh_token = response.data.refresh_token
+    const new_access_token = response.data.access_token
+
+    await updateUserConnectionDataa(user_id, {
+        spotify: {
+            access_token: new_access_token,
+            refresh_token: new_refresh_token
+        }
+    })
 
 }
 
-const fetchSpotifyTracks = async (refresh_token, start_time, end_time) => {
+const fetchSpotifyTracks = async (uid, refresh_token, start_time, end_time) => {
 
-    const access_token = await exchangeRefreshTokenForAccessToken(refresh_token);
+    const access_token = await getSpotifyApiToken(uid);
 
     end_time = 1672651099389
 
@@ -97,8 +111,6 @@ const fetchSpotifyTracks = async (refresh_token, start_time, end_time) => {
         }
     })
 
-    console.log(tracks)
-
     return tracks
 }
 
@@ -119,13 +131,11 @@ const getSpotifyUserDetails = async (access_token) => {
 
 const getSpotifyApiToken = async (uid) => {
     const userData = await searchAuth0UserBySpotifyId(uid);
-    const refresh_token = userData.app_metadata.connections.spotify.refresh_token;
-    const new_access_token = await exchangeRefreshTokenForAccessToken(refresh_token);
-    return new_access_token;
+    return userData.app_metadata.connections.spotify.access_token;
 }
 
 
-module.exports = { 
+module.exports = {
     getSpotifyApiToken,
     connectSpotifyService,
     fetchSpotifyTracks,

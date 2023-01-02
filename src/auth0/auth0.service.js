@@ -2,6 +2,7 @@ const axios = require('axios');
 
 const auth0ApiUrl = 'https://dev-lpah3aos.us.auth0.com/api/v2';
 const auth0TokenExchangeUrl = 'https://dev-lpah3aos.us.auth0.com/oauth/token'
+const m2mClientId = 'J4p3DGQHQmcsrKgznHeKFDMM2DR0aLcN'
 
 const getAuth0ManagementToken = async () => {
 
@@ -11,7 +12,7 @@ const getAuth0ManagementToken = async () => {
         headers: { 'content-type': 'application/x-www-form-urlencoded' },
         data: new URLSearchParams({
             grant_type: 'client_credentials',
-            client_id: process.env.ACTIVITRAX_M2M_CLIENT_ID,
+            client_id: m2mClientId,
             client_secret: process.env.ACTIVITRAX_M2M_CLIENT_SECRET,
             audience: 'https://dev-lpah3aos.us.auth0.com/api/v2/'
         })
@@ -134,6 +135,17 @@ const setUserConnectionData = async (uid, connectionData) => {
 
 }
 
+const updateUserConnectionData = async (uid, connectionData) => {
+    const appMetaData = await getAppMetaData(uid);
+    const service = Object.keys(connectionData)[0];
+    
+    for (let key of Object.keys(connectionData[service])) {
+        appMetaData.connections[service][key] = connectionData[service][key];
+    }
+    
+    await setUserConnectionData(uid, appMetaData);
+}
+
 const addUserConnectionData = async (uid, connectionData) => {
 
     const appMetaData = await getAppMetaData(uid);
@@ -165,5 +177,6 @@ module.exports = {
     addUserConnectionData,
     searchAuth0UserByStravaId,
     searchAuth0UserBySpotifyId,
-    searchAuth0UserByQuery
+    searchAuth0UserByQuery,
+    updateUserConnectionData
 };
