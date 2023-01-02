@@ -12,13 +12,8 @@ const { spotifyRouter } = require("./spotify/spotify.router");
 
 dotenv.config();
 
-if (!(process.env.PORT && process.env.CLIENT_ORIGIN_URL)) {
-  throw new Error(
-    "Missing required environment variables. Check docs for more info."
-  );
-}
 
-const PORT = parseInt(process.env.PORT, 10);
+const PORT = process.env.PORT || 4000;
 const CLIENT_ORIGIN_URL = process.env.CLIENT_ORIGIN_URL;
 
 const app = express();
@@ -52,14 +47,16 @@ app.use((req, res, next) => {
 
 app.use(nocache());
 
-app.use(
-  cors({
-    origin: CLIENT_ORIGIN_URL,
-    methods: ["GET"],
-    allowedHeaders: ["Authorization", "Content-Type"],
-    maxAge: 86400,
-  })
-);
+app.use(cors());
+
+// app.use(
+//   cors({
+//     origin: CLIENT_ORIGIN_URL,
+//     methods: ["GET"],
+//     allowedHeaders: ["Authorization", "Content-Type"],
+//     maxAge: 86400,
+//   })
+// );
 
 app.use("/api/v1", apiRouter);
 
