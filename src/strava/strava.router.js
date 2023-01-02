@@ -28,6 +28,8 @@ stravaRouter.post('/disconnect', validateAccessToken, async (req, res) => {
 
 stravaRouter.post('/webhook_callback', async (req, res) => {
 
+    console.log('webhook post received')
+    
     try {
         const { owner_id, object_id, aspect_type, object_type } = req.body;
         console.log('webhook post received', owner_id, object_id, aspect_type)
