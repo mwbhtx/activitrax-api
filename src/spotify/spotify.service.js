@@ -17,7 +17,7 @@ const connectSpotifyService = async (user_id, auth_token) => {
         params: {
             code: auth_token,
             grant_type: "authorization_code",
-            redirect_uri: "http://localhost:3000/spotify_auth"
+            redirect_uri: process.env.ACTIVITRAX_SPOTIFY_REDIRECT_URI
         }
     }
 
