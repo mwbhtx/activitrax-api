@@ -1,5 +1,5 @@
 const axios = require('axios')
-const { getUserConfig, getUserData, getAppMetaData, setUserConnectionData, addUserConnectionData, searchAuth0UserByQuery, searchAuth0UserByStravaId } = require("../auth0/auth0.service");
+const { getUserConfig, getUserData, getAppMetaData, setUserConnectionData, addUserConnectionData, searchAuth0UserByQuery, searchAuth0UserByStravaId, updateUserServiceTokens } = require("../auth0/auth0.service");
 const { fetchSpotifyTracks } = require('../spotify/spotify.service');
 const stravaClientId = '75032'
 
