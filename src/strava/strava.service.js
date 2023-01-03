@@ -180,7 +180,8 @@ const processStravaActivityCreated = async (user_id, activity_id) => {
     const spotify_id = _.get(userData, 'app_metadata.connections.spotify.id');
 
     // fetch activity details
-    const activity = await fetchStravaActivityDetails(user_id, stravaTokens, activity_id);
+    let activity = await fetchStravaActivityDetails(user_id, stravaTokens, activity_id);
+
     // get activity start time and end time
     const startDateTimeMillis = new Date(activity.start_date).getTime();
     const endDateTimeMillis = startDateTimeMillis + (activity.elapsed_time * 1000);
@@ -198,9 +199,28 @@ const processStravaActivityCreated = async (user_id, activity_id) => {
 
     // If there are tracks in the tracklist, prepend the description with a header
     if (tracklistString.length > 0) {
-        const updatedDescriptionBody = activity.description + '\n\n' + 'Playlist: \n' + tracklistString;
+
+        // add header to tracklist 
+        tracklistString = 'activity playlist: \n' + tracklistString;
+
+        // init new description body
+        let updatedDescriptionBody = tracklistString;
+
+        // because there may be other webhooks in the queue, wait for the activity to be updated before continuing
+        const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
+        await delay(5000) /// waiting 1 second.
+
+        // fetch activity details again to make sure it has been updated
+        activity = await fetchStravaActivityDetails(user_id, stravaTokens, activity_id);
+
+        // if there was already a description, append the tracklist to the end
+        if (activity.description) {
+            updatedDescriptionBody = activity.description + '\n' + tracklistString
+        }
+
         await updateStravaActivity(user_id, activity_id, updatedDescriptionBody);
         console.log(`Update: athlete: ${user_id}, activity ${activity_id}, ${trackList.length} tracks }`)
+
     }
 
 }
