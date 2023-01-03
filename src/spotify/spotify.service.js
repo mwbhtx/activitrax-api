@@ -2,7 +2,25 @@ const axios = require("axios");
 const { addUserConnectionData, searchAuth0UserBySpotifyId, updateUserConnectionData } = require("../auth0/auth0.service");
 const jwt_decode = require('jwt-decode');
 const spotifyClientId = '2d496310f6db494791df2b41b9c2342d'
+const _ = require('lodash');
 
+const getSpotifyUserProfile = async (auth0_token, spotify_uid) => {
+    
+    const spotify_access_token = await getSpotifyApiToken(spotify_uid);
+
+    const reqConfig = {
+        method: "GET",
+        url: "https://api.spotify.com/v1/me",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + spotify_access_token
+        }
+    }
+
+    const spotifyResponse = await axios(reqConfig)
+    return spotifyResponse.data;
+
+}
 
 const connectSpotifyService = async (user_id, auth_token) => {
 
@@ -73,30 +91,29 @@ const exchangeRefreshTokenForAccessToken = async (refresh_token) => {
 
 }
 
-const fetchSpotifyTracks = async (uid, refresh_token, start_time, end_time) => {
-
-    const access_token = await getSpotifyApiToken(uid);
-
-    end_time = 1672651099389
+const fetchSpotifyTracks = async (spotify_access_token, start_time, end_time) => {
 
     const reqConfig = {
         method: "GET",
         url: "https://api.spotify.com/v1/me/player/recently-played",
         headers: {
             "Content-Type": "application/json",
-            "authorization": "Bearer " + access_token
+            "authorization": "Bearer " + spotify_access_token
         },
         params: {
             limit: 25,
-            after: start_time
+            after: start_time,
+            
         }
     }
 
     const response = await axios(reqConfig)
 
-    const filteredTracks = response.data.items.filter(item => {
+    const tracksInRange = _.get(response, 'data.items', [])
+
+    const filteredTracks = tracksInRange.filter(item => {
         const playedAtInMillis = new Date(item.played_at).getTime()
-        return playedAtInMillis < end_time
+        return playedAtInMillis <= end_time
     })
 
     const tracks = filteredTracks.map(item => {
@@ -139,5 +156,6 @@ module.exports = {
     getSpotifyApiToken,
     connectSpotifyService,
     fetchSpotifyTracks,
-    getSpotifyUserDetails
+    getSpotifyUserDetails,
+    getSpotifyUserProfile
 }

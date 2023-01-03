@@ -18,6 +18,7 @@
     "express-oauth2-jwt-bearer": "^1.1.0",
     "helmet": "^4.6.0",
     "jwt-decode": "^3.1.2",
+    "lodash": "^4.17.21",
     "nocache": "^3.0.1"
   },
   "devDependencies": {
