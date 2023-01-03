@@ -86,7 +86,7 @@ const sendSpotifyApiRequest = async (uid, reqConfig, tokens) => {
 
     try {
         const response = await axios(reqConfig)
-        return response.data
+        return response
     }
     catch (error) {
 
@@ -95,7 +95,7 @@ const sendSpotifyApiRequest = async (uid, reqConfig, tokens) => {
             const newTokens = await exchangeSpotifyRefreshToken(uid, tokens.refresh_token)
             reqConfig.headers["authorization"] = "Bearer " + newTokens.access_token
             const response = await axios(reqConfig)
-            return response.data
+            return response
         }
         else {
             throw error
@@ -106,7 +106,6 @@ const sendSpotifyApiRequest = async (uid, reqConfig, tokens) => {
 
 const fetchSpotifyTracks = async (uid, tokens, start_time, end_time) => {
 
-    console.log(`start time: ${start_time}`)
     const reqConfig = {
         method: "GET",
         url: "https://api.spotify.com/v1/me/player/recently-played",
@@ -124,8 +123,6 @@ const fetchSpotifyTracks = async (uid, tokens, start_time, end_time) => {
     const response = await sendSpotifyApiRequest(uid, reqConfig, tokens)
 
     const tracksInRange = _.get(response, 'data.items', [])
-
-    console.log(`number of tracks in range: ${tracksInRange.length}`)
 
     const filteredTracks = tracksInRange.filter(item => {
         const playedAtInMillis = new Date(item.played_at).getTime()
@@ -162,8 +159,8 @@ const getSpotifyUserDetails = async (uid, tokens) => {
         }
     }
 
-    const data = await sendSpotifyApiRequest(uid, reqConfig, tokens)
-    return data
+    const response = await sendSpotifyApiRequest(uid, reqConfig, tokens)
+    return response.data
 }
 
 const getSpotifyApiTokens = async (uid) => {
