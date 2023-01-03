@@ -176,6 +176,9 @@ const processStravaActivityCreated = async (user_id, activity_id) => {
         refresh_token: _.get(userData, 'app_metadata.connections.spotify.refresh_token'),
     }
 
+    // extract spotify user id
+    const spotify_id = _.get(userData, 'app_metadata.connections.spotify.id');
+
     // fetch activity details
     const activity = await fetchStravaActivityDetails(user_id, stravaTokens, activity_id);
     // get activity start time and end time
@@ -183,7 +186,7 @@ const processStravaActivityCreated = async (user_id, activity_id) => {
     const endDateTimeMillis = startDateTimeMillis + (activity.elapsed_time * 1000);
 
     // fetch spotify tracks within activity time range
-    const trackList = await fetchSpotifyTracks(user_id, spotifyTokens, startDateTimeMillis, endDateTimeMillis);
+    const trackList = await fetchSpotifyTracks(spotify_id, spotifyTokens, startDateTimeMillis, endDateTimeMillis);
 
     // parse tracklist string to append to activity description
     let tracklistString = '';
