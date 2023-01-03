@@ -12,6 +12,8 @@ const { exchangeStravaAuthToken, createStravaWebhook, deleteStravaWebhook, getSt
 
 const stravaRouter = express.Router();
 
+const _ = require('lodash');
+
 stravaRouter.post('/disconnect', validateAccessToken, async (req, res) => {
 
     try {
@@ -20,7 +22,8 @@ stravaRouter.post('/disconnect', validateAccessToken, async (req, res) => {
         res.status(200).json({ message: 'success' });
     }
     catch (error) {
-        console.error(error);
+        const error_message = _.get(error, 'response.data');
+        console.log(JSON.stringify(error_message) || error);
         res.status(500).json({ message: 'server error' });
     }
 
@@ -34,7 +37,8 @@ stravaRouter.get('/user_profile', validateAccessToken, async (req, res) => {
         res.status(200).json(user_profile);
     }
     catch (error) {
-        console.error(error);
+        const error_message = _.get(error, 'response.data');
+        console.log(JSON.stringify(error_message) || error);
         res.status(500).json({ message: 'server error' });
     }
 
@@ -51,7 +55,8 @@ stravaRouter.post('/webhook_callback', async (req, res) => {
         res.status(200).json({ message: 'success' });
     }
     catch (error) {
-        console.error(error);
+        const error_message = _.get(error, 'response.data');
+        console.log(JSON.stringify(error_message) || error);
         res.status(500).json({ message: 'server error' });
     }
 
@@ -65,7 +70,8 @@ stravaRouter.get('/webhook_details', validateAccessToken, async (req, res) => {
         res.status(200).json({ message: 'success' });
     }
     catch (error) {
-        console.error(error);
+        const error_message = _.get(error, 'response.data');
+        console.log(JSON.stringify(error_message) || error);
         res.status(500).json({ message: 'server error' });
     }
 })
@@ -81,7 +87,8 @@ stravaRouter.get('/webhook_callback', async (req, res) => {
         }
     }
     catch (error) {
-        console.error(error);
+        const error_message = _.get(error, 'response.data');
+        console.log(JSON.stringify(error_message) || error);
         res.status(500).json({ message: 'server error' });
     }
 
@@ -93,7 +100,8 @@ stravaRouter.post('/webhook_create', validateAccessToken, async (req, res) => {
         res.status(200).json({ message: 'success' })
     }
     catch (error) {
-        console.error(error);
+        const error_message = _.get(error, 'response.data');
+        console.log(JSON.stringify(error_message) || error);
         res.status(500).json({ message: 'server error' });
     }
 
@@ -105,7 +113,8 @@ stravaRouter.post('/webhook_delete', validateAccessToken, async (req, res) => {
         res.status(200).json({ message: 'success' })
     }
     catch (error) {
-        console.error(error);
+        const error_message = _.get(error, 'response.data');
+        console.log(JSON.stringify(error_message) || error);
         res.status(500).json({ message: 'server error' });
     }
 })
@@ -119,7 +128,8 @@ stravaRouter.post("/exchange_token", validateAccessToken, async (req, res) => {
         await exchangeStravaAuthToken(user_id, auth_token);
         res.status(200).json({ message: 'success' });
     } catch (error) {
-        console.error(error);
+        const error_message = _.get(error, 'response.data');
+        console.log(JSON.stringify(error_message) || error);
         res.status(500).json({ message: 'server error' });
     }
 

@@ -1,8 +1,9 @@
 const axios = require('axios')
 const { getUserConfig, getUserData, getAppMetaData, setUserConnectionData, addUserConnectionData, searchAuth0UserByQuery, searchAuth0UserByStravaId } = require("../auth0/auth0.service");
 const { fetchSpotifyTracks } = require('../spotify/spotify.service');
-const jwt_decode = require('jwt-decode');
 const stravaClientId = '75032'
+
+const _ = require('lodash');
 
 const getStravaApiToken = async (uid) => {
     const userData = await searchAuth0UserByStravaId(uid);
@@ -101,7 +102,7 @@ const deleteStravaWebhook = async () => {
     }
 }
 
-const fetchStravaActivityDetails = async (strava_api_token, activity_id) => {
+const fetchStravaActivityDetails = async (strava_tokens, activity_id) => {
 
     const reqConfig = {
         method: "GET",
@@ -110,7 +111,7 @@ const fetchStravaActivityDetails = async (strava_api_token, activity_id) => {
             "Content-Type": "application/json",
         },
         params: {
-            access_token: strava_api_token,
+            access_token: strava_tokens.access_token,
         }
 
     }
@@ -126,20 +127,25 @@ const processStravaActivityCreated = async (user_id, activity_id) => {
     const userData = await searchAuth0UserByQuery(`app_metadata.connections.strava.id:${user_id}`);
 
     // extract strava acess token
-    const stravaToken = userData.app_metadata.connections.strava.access_token;
-
+    const stravaTokens = {
+        access_token: _.get(userData, 'app_metadata.connections.strava.access_token'),
+        refresh_token: _.get(userData, 'app_metadata.connections.strava.refresh_token'),
+    }
+    
     // extract spotify access token
-    const spotifyToken = userData.app_metadata.connections.spotify.access_token;
+    const spotifyTokens = {
+        access_token: _.get(userData, 'app_metadata.connections.spotify.access_token'),
+        refresh_token: _.get(userData, 'app_metadata.connections.spotify.refresh_token'),
+    }
 
     // fetch activity details
-    const activity = await fetchStravaActivityDetails(stravaToken, activity_id);
-
+    const activity = await fetchStravaActivityDetails(stravaTokens, activity_id);
     // get activity start time and end time
     const startDateTimeMillis = new Date(activity.start_date).getTime();
     const endDateTimeMillis = startDateTimeMillis + (activity.elapsed_time * 1000);
 
     // fetch spotify tracks within activity time range
-    const trackList = await fetchSpotifyTracks(spotifyToken, startDateTimeMillis, endDateTimeMillis);
+    const trackList = await fetchSpotifyTracks(user_id, spotifyTokens, startDateTimeMillis, endDateTimeMillis);
 
     // parse tracklist string to append to activity description
     let tracklistString = '';
@@ -158,7 +164,7 @@ const processStravaActivityCreated = async (user_id, activity_id) => {
 
 }
 
-const exchangeRefreshTokenForAccessToken = async (refresh_token) => {
+const exchangeStravaRefreshToken = async (refresh_token) => {
 
     const reqConfig = {
         method: "POST",

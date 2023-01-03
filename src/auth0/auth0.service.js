@@ -4,6 +4,8 @@ const auth0ApiUrl = 'https://dev-lpah3aos.us.auth0.com/api/v2';
 const auth0TokenExchangeUrl = 'https://dev-lpah3aos.us.auth0.com/oauth/token'
 const m2mClientId = 'J4p3DGQHQmcsrKgznHeKFDMM2DR0aLcN'
 
+const _ = require('lodash');
+
 const getAuth0ManagementToken = async () => {
 
     const auth0ManagementRequestOptions = {
@@ -62,6 +64,53 @@ const searchAuth0UserByQuery = async (query) => {
     if (response.data.length === 1) {
         return response.data[0];
     }
+}
+
+
+const updateUserServiceTokens = async (uid, service, tokens) => {
+
+    const auth0_management_token = await getAuth0ManagementToken();
+    let auth0UserId = null
+    let userData = null;
+
+    if (service === 'spotify') {
+        userData = await searchAuth0UserBySpotifyId(uid);
+        auth0UserId = userData.user_id;
+        if (!auth0UserId) {
+            throw new Error('User not found when exchanging spotify refresh token')
+        } else {
+            _.set(userData, 'app_metadata.connections.spotify.refresh_token', tokens.refresh_token);
+            _.set(userData, 'app_metadata.connections.spotify.access_token', tokens.access_token);
+        }
+    } else if (service === 'strava') {
+        userData = await searchAuth0UserByStravaId(uid);
+        auth0UserId = userData.user_id;
+        if (!auth0UserId) {
+            throw new Error('User not found when exchanging strava refresh token')
+        } else {
+            _.set(userData, 'app_metadata.connections.strava.refresh_token', tokens.refresh_token);
+            _.set(userData, 'app_metadata.connections.strava.access_token', tokens.access_token);
+        }
+    }
+
+    // save user data back
+    if (userData && auth0UserId) {
+        const setUserProfileRequestOptions = {
+            method: 'PATCH',
+            url: auth0ApiUrl + `/users/${auth0UserId}`,
+            headers: {
+                'content-type': 'application/json',
+                'authorization': 'Bearer ' + auth0_management_token,
+            },
+            data: {
+                app_metadata: userData.app_metadata
+            }
+        }
+
+        await axios.request(setUserProfileRequestOptions)
+
+    }
+
 }
 
 const searchAuth0UserBySpotifyId = async (spotifyId) => {
@@ -135,16 +184,6 @@ const setUserConnectionData = async (uid, connectionData) => {
 
 }
 
-const updateUserConnectionData = async (uid, connectionData) => {
-    const appMetaData = await getAppMetaData(uid);
-    const service = Object.keys(connectionData)[0];
-    
-    for (let key of Object.keys(connectionData[service])) {
-        appMetaData.connections[service][key] = connectionData[service][key];
-    }
-    
-    await setUserConnectionData(uid, appMetaData);
-}
 
 const addUserConnectionData = async (uid, connectionData) => {
 
@@ -178,5 +217,5 @@ module.exports = {
     searchAuth0UserByStravaId,
     searchAuth0UserBySpotifyId,
     searchAuth0UserByQuery,
-    updateUserConnectionData
+    updateUserServiceTokens
 };
