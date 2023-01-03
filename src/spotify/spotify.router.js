@@ -8,9 +8,24 @@ const {
     setUserConnectionData, addUserConnectionData
 } = require("../auth0/auth0.service");
 
-const { connectSpotifyService } = require("./spotify.service");
+const { connectSpotifyService, getSpotifyUserProfile } = require("./spotify.service");
 
 const spotifyRouter = express.Router();
+
+
+spotifyRouter.get('/user_profile', validateAccessToken, async (req, res) => {
+    try {
+        const auth0_token = req.auth.token
+        const spotify_uid = req.query.user_id
+        const user_profile = await getSpotifyUserProfile(auth0_token, spotify_uid);
+        res.status(200).json(user_profile);
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'server error' });
+    }
+
+})
 
 spotifyRouter.post("/exchange_token", validateAccessToken, async (req, res) => {
 

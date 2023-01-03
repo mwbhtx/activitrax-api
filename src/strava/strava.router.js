@@ -8,7 +8,7 @@ const {
     setUserConnectionData, deleteUserConnectionData
 } = require("../auth0/auth0.service");
 
-const { exchangeStravaAuthToken, createStravaWebhook, deleteStravaWebhook, getStravaWebhookDetails, processStravaActivityCreated } = require("./strava.service");
+const { exchangeStravaAuthToken, createStravaWebhook, deleteStravaWebhook, getStravaWebhookDetails, processStravaActivityCreated, getStravaUserProfile } = require("./strava.service");
 
 const stravaRouter = express.Router();
 
@@ -26,10 +26,22 @@ stravaRouter.post('/disconnect', validateAccessToken, async (req, res) => {
 
 })
 
+stravaRouter.get('/user_profile', validateAccessToken, async (req, res) => {
+    try {
+        const auth0_token = req.auth.token
+        const strava_uid = req.query.user_id
+        const user_profile = await getStravaUserProfile(auth0_token, strava_uid);
+        res.status(200).json(user_profile);
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'server error' });
+    }
+
+})
+
 stravaRouter.post('/webhook_callback', async (req, res) => {
 
-    console.log('webhook post received')
-    
     try {
         const { owner_id, object_id, aspect_type, object_type } = req.body;
         console.log('webhook post received', owner_id, object_id, aspect_type)
