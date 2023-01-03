@@ -207,19 +207,20 @@ const processStravaActivityCreated = async (user_id, activity_id) => {
         let updatedDescriptionBody = tracklistString;
 
         // because there may be other webhooks in the queue, wait for the activity to be updated before continuing
-        const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
-        await delay(5000) /// waiting 1 second.
+        setTimeout(async () => {
 
-        // fetch activity details again to make sure it has been updated
-        activity = await fetchStravaActivityDetails(user_id, stravaTokens, activity_id);
+            // fetch activity details again to make sure it has been updated
+            activity = await fetchStravaActivityDetails(user_id, stravaTokens, activity_id);
 
-        // if there was already a description, append the tracklist to the end
-        if (activity.description) {
-            updatedDescriptionBody = activity.description + '\n\n' + tracklistString
-        }
+            // if there was already a description, append the tracklist to the end
+            if (activity.description) {
+                updatedDescriptionBody = activity.description + '\n\n' + tracklistString
+            }
 
-        await updateStravaActivity(user_id, activity_id, updatedDescriptionBody);
-        console.log(`Update: athlete: ${user_id}, activity ${activity_id}, ${trackList.length} tracks }`)
+            await updateStravaActivity(user_id, activity_id, updatedDescriptionBody);
+            console.log(`Update: athlete: ${user_id}, activity ${activity_id}, ${trackList.length} tracks }`)
+
+        }, 5000);
 
     }
 
