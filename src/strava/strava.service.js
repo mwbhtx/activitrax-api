@@ -201,7 +201,7 @@ const processStravaActivityCreated = async (user_id, activity_id) => {
     if (tracklistString.length > 0) {
 
         // add header to tracklist 
-        tracklistString = 'activity playlist: \n' + tracklistString;
+        tracklistString = 'Activity Playlist: \n' + tracklistString;
 
         // init new description body
         let updatedDescriptionBody = tracklistString;
@@ -215,7 +215,7 @@ const processStravaActivityCreated = async (user_id, activity_id) => {
 
         // if there was already a description, append the tracklist to the end
         if (activity.description) {
-            updatedDescriptionBody = activity.description + '\n' + tracklistString
+            updatedDescriptionBody = activity.description + '\n\n' + tracklistString
         }
 
         await updateStravaActivity(user_id, activity_id, updatedDescriptionBody);
