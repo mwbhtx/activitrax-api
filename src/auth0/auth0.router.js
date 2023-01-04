@@ -9,13 +9,13 @@ const auth0Router = express.Router();
 const _ = require('lodash');
 
 const {
-    getUserConfig, deleteUserConnectionData, searchAuth0UserByStravaId
+    getUserConfigForClient, deleteUserConnectionData, searchAuth0UserByStravaId
 } = require("../auth0/auth0.service");
 
 auth0Router.get("/user_config", validateAccessToken, async (req, res) => {
     try {
         const user_id = req.auth.payload.sub;
-        const config = await getUserConfig(user_id);
+        const config = await getUserConfigForClient(user_id);
         res.status(200).json(config);
     } catch (error) {
         const error_message = _.get(error, 'response.data');
