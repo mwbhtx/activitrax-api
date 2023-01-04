@@ -25,9 +25,7 @@ const getAuth0ManagementToken = async () => {
     return auth0_management_token;
 }
 
-const getUserConfig = async (uid) => {
-
-    const auth0_management_token = await getAuth0ManagementToken();
+const getUserConfigForClient = async (uid) => {
 
     const userProfile = await getUserData(uid);
 
@@ -35,8 +33,9 @@ const getUserConfig = async (uid) => {
         connections: {}
     }
 
-    if (userProfile.app_metadata?.connections) {
-        for (let key of Object.keys(userProfile.app_metadata.connections)) {
+    const userConnections = _.get(userProfile, 'app_metadata.connections');
+    if (userConnections) {
+        for (let key of Object.keys(userConnections)) {
             userConfig.connections[key] = true
         }
 
@@ -187,13 +186,13 @@ const setUserConnectionData = async (uid, connectionData) => {
 
 const addUserConnectionData = async (uid, connectionData) => {
 
-    const appMetaData = await getAppMetaData(uid);
+    const userAppMetadata = await getAppMetaData(uid);
 
-    const connectionsData = {
-        ...appMetaData.connections,
-        ...connectionData
-    }
+    const userConnectionObject = _.get(userAppMetadata, 'connections', {})
 
+    // merge new connection data with existing
+    const connectionsData = Object.assign(userConnectionObject, connectionData);
+   
     await setUserConnectionData(uid, connectionsData);
 
 }
@@ -208,7 +207,7 @@ const deleteUserConnectionData = async (uid, connection) => {
 
 
 module.exports = {
-    getUserConfig,
+    getUserConfigForClient,
     setUserConnectionData,
     getUserData,
     getAppMetaData,
