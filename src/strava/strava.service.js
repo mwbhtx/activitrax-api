@@ -133,15 +133,6 @@ const fetchStravaActivityDetails = async (uid, stravaTokens, activity_id) => {
 
 }
 
-const setStravaDescriptionWithDelay = async (delay, callback) => {
-
-    // because there may be other webhooks in the queue, wait for the activity to be updated before continuing
-    setTimeout(async () => {
-        await callback();
-    }, delay);
-
-}
-
 const sendStravaApiRequest = async (uid, reqConfig, tokens) => {
 
     if (!tokens) {
@@ -214,8 +205,8 @@ const processStravaActivityCreated = async (user_id, activity_id) => {
         // init new description body
         let updatedDescriptionBody = tracklistString;
 
-        setStravaDescriptionWithDelay(5000, async () => {
-
+        // because there may be other webhooks in the queue, wait for the activity to be updated before continuing
+        setTimeout(async () => {
             // fetch activity details again to make sure it has been updated
             activity = await fetchStravaActivityDetails(user_id, stravaTokens, activity_id);
 
@@ -226,93 +217,92 @@ const processStravaActivityCreated = async (user_id, activity_id) => {
 
             await updateStravaActivity(user_id, activity_id, updatedDescriptionBody);
             console.log(`Update: athlete: ${user_id}, activity ${activity_id}, ${trackList.length} tracks }`)
-
-        })
+        }, 5000);
 
     }
+}
 
-    const exchangeStravaRefreshToken = async (uid, refresh_token) => {
+const exchangeStravaRefreshToken = async (uid, refresh_token) => {
 
-        const reqConfig = {
-            method: "POST",
-            url: "https://www.strava.com/oauth/token",
-            params: {
-                client_id: stravaClientId,
-                client_secret: process.env.ACTIVITRAX_STRAVA_CLIENT_SECRET,
-                refresh_token: refresh_token,
-                grant_type: "refresh_token"
-            }
+    const reqConfig = {
+        method: "POST",
+        url: "https://www.strava.com/oauth/token",
+        params: {
+            client_id: stravaClientId,
+            client_secret: process.env.ACTIVITRAX_STRAVA_CLIENT_SECRET,
+            refresh_token: refresh_token,
+            grant_type: "refresh_token"
+        }
+    }
+
+    const response = await axios(reqConfig)
+
+    // Parse response
+    const new_tokens = {
+        refresh_token: _.get(response, 'data.refresh_token', refresh_token),
+        access_token: _.get(response, 'data.access_token')
+    }
+
+    // save new refresh token / access token to auth0 user metadata
+    await updateUserServiceTokens(uid, 'strava', new_tokens)
+
+    // return new access token
+    return new_tokens
+}
+
+const updateStravaActivity = async (user_id, activity_id, update_body) => {
+
+    const stravaTokens = await getStravaApiToken(user_id);
+
+    // update activity with spotify playlist
+    const reqConfig = {
+        method: "PUT",
+        url: `https://www.strava.com/api/v3/activities/${activity_id}`,
+        headers: {
+            "Content-Type": "application/json",
+            "authorization": `Bearer ${stravaTokens.access_token}`
+        },
+        data: {
+            description: update_body
         }
 
-        const response = await axios(reqConfig)
+    }
 
-        // Parse response
-        const new_tokens = {
-            refresh_token: _.get(response, 'data.refresh_token', refresh_token),
-            access_token: _.get(response, 'data.access_token')
+    const response = await sendStravaApiRequest(user_id, reqConfig, stravaTokens)
+    return response.data
+}
+
+// subscribe to strava new activity webhook
+const createStravaWebhook = async () => {
+
+    const reqConfig = {
+        method: "POST",
+        url: "https://www.strava.com/api/v3/push_subscriptions",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        params: {
+            client_id: stravaClientId,
+            client_secret: process.env.ACTIVITRAX_STRAVA_CLIENT_SECRET,
+            callback_url: process.env.ACTIVITRAX_STRAVA_CALLBACK_URL,
+            verify_token: process.env.ACTIVITRAX_STRAVA_WEBOHOOK_VERIFY_TOKEN
         }
 
-        // save new refresh token / access token to auth0 user metadata
-        await updateUserServiceTokens(uid, 'strava', new_tokens)
-
-        // return new access token
-        return new_tokens
     }
 
+    const response = await axios(reqConfig)
 
-    const updateStravaActivity = async (user_id, activity_id, update_body) => {
-
-        const stravaTokens = await getStravaApiToken(user_id);
-
-        // update activity with spotify playlist
-        const reqConfig = {
-            method: "PUT",
-            url: `https://www.strava.com/api/v3/activities/${activity_id}`,
-            headers: {
-                "Content-Type": "application/json",
-                "authorization": `Bearer ${stravaTokens.access_token}`
-            },
-            data: {
-                description: update_body
-            }
-
-        }
-
-        const response = await sendStravaApiRequest(user_id, reqConfig, stravaTokens)
-        return response.data
-    }
-
-    // subscribe to strava new activity webhook
-    const createStravaWebhook = async () => {
-
-        const reqConfig = {
-            method: "POST",
-            url: "https://www.strava.com/api/v3/push_subscriptions",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            params: {
-                client_id: stravaClientId,
-                client_secret: process.env.ACTIVITRAX_STRAVA_CLIENT_SECRET,
-                callback_url: process.env.ACTIVITRAX_STRAVA_CALLBACK_URL,
-                verify_token: process.env.ACTIVITRAX_STRAVA_WEBOHOOK_VERIFY_TOKEN
-            }
-
-        }
-
-        const response = await axios(reqConfig)
-
-    }
+}
 
 
 
 
-    module.exports = {
-        exchangeStravaAuthToken,
-        createStravaWebhook,
-        deleteStravaWebhook,
-        getStravaWebhookDetails,
-        processStravaActivityCreated,
-        getStravaApiToken,
-        getStravaUserProfile
-    }
+module.exports = {
+    exchangeStravaAuthToken,
+    createStravaWebhook,
+    deleteStravaWebhook,
+    getStravaWebhookDetails,
+    processStravaActivityCreated,
+    getStravaApiToken,
+    getStravaUserProfile
+}
