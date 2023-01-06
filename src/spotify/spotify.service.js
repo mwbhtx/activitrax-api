@@ -141,6 +141,11 @@ const fetchSpotifyTracks = async (uid, tokens, start_time, end_time) => {
         }
     })
 
+    // sort tracks by oldest date first using played_at
+    tracks.sort((a, b) => {
+        return new Date(a.played_at) - new Date(b.played_at)
+    })
+
     return tracks
 }
 
