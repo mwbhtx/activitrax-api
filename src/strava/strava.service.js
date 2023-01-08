@@ -200,17 +200,17 @@ const processStravaActivityCreated = async (user_id, activity_id) => {
     // Parse data from strava activity and store in user_metadata
     const local_start_datetime = activity.start_date_local;
 
-    // get just the date from datetime object formatted as MM/DD/YYYY
-    const local_start_date = local_start_datetime.split('T')[0];
-    // get just the time formatted as HH:MM AM/PM
-    const local_start_time = local_start_datetime.split('T')[1].split('+')[0];
+    // convert to time with format HH:MM AM/PM
+    const local_start_time_formatted = new Date(local_start_datetime).toLocaleTimeString('en-US', { hour12: true, hour: 'numeric', minute: 'numeric' });
+    // convert to date with format MM/DD/YYYY
+    const local_start_date_formatted = new Date(local_start_datetime).toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
 
     const activityData = {
         id: activity.id,
         name: activity.name,
         type: activity.type,
-        start_date: local_start_date,
-        start_time: local_start_time,
+        start_date: local_start_date_formatted,
+        start_time: local_start_time_formatted,
         elapsed_time: activity.elapsed_time,
         distance: activity.distance,
         average_speed: activity.average_speed,
