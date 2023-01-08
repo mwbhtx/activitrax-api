@@ -1,9 +1,10 @@
 const axios = require('axios')
-const { addUserConnectionData, searchAuth0UserByQuery, searchAuth0UserByStravaId, updateUserServiceTokens } = require("../auth0/auth0.service");
+const { addUserConnectionData, searchAuth0UserByQuery, searchAuth0UserByStravaId, updateUserServiceTokens, addUserActivityData } = require("../auth0/auth0.service");
 const { fetchSpotifyTracks } = require('../spotify/spotify.service');
 const stravaClientId = '75032'
 
 const _ = require('lodash');
+const { join } = require('lodash');
 
 
 const getStravaApiToken = async (uid) => {
@@ -196,6 +197,34 @@ const processStravaActivityCreated = async (user_id, activity_id) => {
         tracklistString += `- ${track.artist} - ${track.name}\n`;
     })
 
+    // Parse data from strava activity and store in user_metadata
+    const local_start_datetime = activity.start_date_local;
+
+    // get just the date from datetime object formatted as MM/DD/YYYY
+    const local_start_date = local_start_datetime.split('T')[0];
+    // get just the time formatted as HH:MM AM/PM
+    const local_start_time = local_start_datetime.split('T')[1].split('+')[0];
+
+    const activityData = {
+        id: activity.id,
+        name: activity.name,
+        type: activity.type,
+        start_date: local_start_date,
+        start_time: local_start_time,
+        elapsed_time: activity.elapsed_time,
+        distance: activity.distance,
+        average_speed: activity.average_speed,
+        calories: activity.calories,
+        track_count: trackList.length,
+        tracklist: trackList
+    }
+
+    // get auth0 user id
+    const auth0UserId = userData.user_id;
+
+    // store activity data in auth0
+    await addUserActivityData(auth0UserId, activityData);
+
     // If there are tracks in the tracklist, prepend the description with a header
     if (tracklistString.length > 0) {
 
@@ -220,6 +249,7 @@ const processStravaActivityCreated = async (user_id, activity_id) => {
 
             await updateStravaActivity(user_id, activity_id, updatedDescriptionBody);
             console.log(`Update: athlete: ${user_id}, activity ${activity_id}, ${trackList.length} tracks }`)
+
         }, 5000);
 
     }

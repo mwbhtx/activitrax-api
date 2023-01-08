@@ -25,6 +25,28 @@ const getAuth0ManagementToken = async () => {
     return auth0_management_token;
 }
 
+const addUserActivityData = async (uid, activity) => {
+
+    const auth0_management_token = await getAuth0ManagementToken();
+
+    const setUserProfileRequestOptions = {
+        method: 'PATCH',
+        url: auth0ApiUrl + `/users/${uid}`,
+        headers: {
+            'content-type': 'application/json',
+            'authorization': 'Bearer ' + auth0_management_token,
+        },
+        data: {
+            user_metadata: {
+                last_strava_activity: activity
+            }
+        }
+    }
+
+    await axios.request(setUserProfileRequestOptions)
+
+}
+
 const getUserConfigForClient = async (uid) => {
 
     const userProfile = await getUserData(uid);
@@ -38,8 +60,14 @@ const getUserConfigForClient = async (uid) => {
         for (let key of Object.keys(userConnections)) {
             userConfig.connections[key] = true
         }
-
     }
+
+    const last_strava_activity = _.get(userProfile, 'user_metadata.last_strava_activity');
+    if (last_strava_activity) {
+        userConfig.last_strava_activity = last_strava_activity;
+    }
+
+
     return userConfig;
 }
 
@@ -192,9 +220,29 @@ const addUserConnectionData = async (uid, connectionData) => {
 
     // merge new connection data with existing
     const connectionsData = Object.assign(userConnectionObject, connectionData);
-   
+
     await setUserConnectionData(uid, connectionsData);
 
+}
+
+const getUserMetaData = async (uid) => {
+
+    const auth0_management_token = await getAuth0ManagementToken();
+
+    const getUserProfileRequstOptions = {
+        method: 'GET',
+        url: auth0ApiUrl + `/users/${uid}`,
+        headers: {
+            'content-type': 'application/x-www-form-urlencoded',
+            'Authorization': 'Bearer ' + auth0_management_token,
+        },
+        params: {
+            fields: 'app_metadata'
+        }
+    }
+
+    const userMetaDataResponse = await axios.request(getUserProfileRequstOptions)
+    return userMetaDataResponse.data.app_metadata;
 }
 
 const deleteUserConnectionData = async (uid, connection) => {
@@ -207,6 +255,7 @@ const deleteUserConnectionData = async (uid, connection) => {
 
 
 module.exports = {
+    addUserActivityData,
     getUserConfigForClient,
     setUserConnectionData,
     getUserData,
@@ -216,5 +265,6 @@ module.exports = {
     searchAuth0UserByStravaId,
     searchAuth0UserBySpotifyId,
     searchAuth0UserByQuery,
-    updateUserServiceTokens
+    updateUserServiceTokens,
+    getUserMetaData,
 };
