@@ -212,6 +212,9 @@ const processStravaActivityCreated = async (user_id, activity_id) => {
     // convert meters to miles
     const distance_miles = activity.distance * 0.000621371;
 
+    // limit distance in miles to 2 decimal places
+    const distance_miles_rounded = distance_miles.toFixed(2);
+
     const activityData = {
         id: activity.id,
         name: activity.name,
@@ -222,7 +225,7 @@ const processStravaActivityCreated = async (user_id, activity_id) => {
         start_time_formatted: local_start_time_formatted,
         elapsed_time: activity.elapsed_time,
         distance_meters: activity.distance,
-        distance_miles: distance_miles,
+        distance_miles: distance_miles_rounded,
         average_speed: activity.average_speed,
         calories: activity.calories,
         track_count: trackList.length,
