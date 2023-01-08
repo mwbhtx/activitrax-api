@@ -209,18 +209,20 @@ const processStravaActivityCreated = async (user_id, activity_id) => {
     // Create formatted string for start time as HH:MM AM/PM
     const local_start_time_formatted = moment(local_start_datetime).format('hh:mm A');
 
-    // get distance type from activity
-    const distance_type = activity.distance > 1000 ? 'km' : 'm';
+    // convert meters to miles
+    const distance_miles = activity.distance * 0.000621371;
 
     const activityData = {
         id: activity.id,
         name: activity.name,
+        unit_preference: activity.unit_preference,
         type: activity.type,
         start_date: activity.start_date,
         start_date_formatted: local_start_date_formatted,
         start_time_formatted: local_start_time_formatted,
         elapsed_time: activity.elapsed_time,
-        distance: activity.distance,
+        distance_meters: activity.distance,
+        distance_miles: distance_miles,
         average_speed: activity.average_speed,
         calories: activity.calories,
         track_count: trackList.length,
