@@ -228,7 +228,7 @@ const processStravaActivityCreated = async (user_id, activity_id) => {
         distance_miles: distance_miles_rounded,
         average_speed: activity.average_speed,
         calories: activity.calories,
-        track_count: trackList.length || 0,
+        track_count: _.toString(trackList.length),
         tracklist: trackList
     }
 
