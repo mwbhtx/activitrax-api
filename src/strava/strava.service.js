@@ -206,8 +206,8 @@ const processStravaActivityCreated = async (user_id, activity_id) => {
     // Create formatted string for start date as DD/MM/YYYY
     const local_start_date_formatted = moment(local_start_datetime).format('DD/MM/YYYY');
 
-    // Create formatted string for start time as HH:MM AM/PM
-    const local_start_time_formatted = moment(local_start_datetime).format('hh:mm A');
+    // Create formatted string for start time as H:MM AM/PM
+    const local_start_time_formatted = moment(local_start_datetime).format('h:mm A');
 
     // convert meters to miles
     const distance_miles = activity.distance * 0.000621371;
