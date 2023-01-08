@@ -193,14 +193,14 @@ const processStravaActivityCreated = async (user_id, activity_id) => {
 
     // for each track in tracklist, append to description string as a minified list
     trackList.forEach((track, index) => {
-        tracklistString += `"${track.artist} - ${track.name}"\n`;
+        tracklistString += `- ${track.artist} - ${track.name}\n`;
     })
 
     // If there are tracks in the tracklist, prepend the description with a header
     if (tracklistString.length > 0) {
 
         // add header to tracklist 
-        tracklistString = 'Listened to: \n' + tracklistString;
+        tracklistString = 'tracklist:\n --------------------------\n' + tracklistString;
 
         // init new description body
         let updatedDescriptionBody = tracklistString;
@@ -216,7 +216,7 @@ const processStravaActivityCreated = async (user_id, activity_id) => {
             }
 
             // add company info
-            updatedDescriptionBody += '\n-provided by activitrax.io'
+            updatedDescriptionBody += '--------------------------\n- provided by activitrax.io'
 
             await updateStravaActivity(user_id, activity_id, updatedDescriptionBody);
             console.log(`Update: athlete: ${user_id}, activity ${activity_id}, ${trackList.length} tracks }`)
