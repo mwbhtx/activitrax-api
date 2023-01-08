@@ -229,8 +229,7 @@ const processStravaActivityCreated = async (user_id, activity_id) => {
         average_speed: activity.average_speed,
         calories: activity.calories,
         track_count: trackList.length || 0,
-        tracklist: trackList,
-        distance_type: distance_type,
+        tracklist: trackList
     }
 
     // get auth0 user id
