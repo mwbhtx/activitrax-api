@@ -208,6 +208,9 @@ const processStravaActivityCreated = async (user_id, activity_id) => {
     // Create formatted string for start time as HH:MM AM/PM
     const local_start_time_formatted = moment(local_start_datetime).format('hh:mm A');
 
+    // get distance type from activity
+    const distance_type = activity.distance > 1000 ? 'km' : 'm';
+
     const activityData = {
         id: activity.id,
         name: activity.name,
@@ -220,7 +223,8 @@ const processStravaActivityCreated = async (user_id, activity_id) => {
         average_speed: activity.average_speed,
         calories: activity.calories,
         track_count: trackList.length,
-        tracklist: trackList
+        tracklist: trackList,
+        distance_type: distance_type,
     }
 
     // get auth0 user id
