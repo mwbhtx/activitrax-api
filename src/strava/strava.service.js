@@ -242,7 +242,7 @@ const processStravaActivityCreated = async (user_id, activity_id) => {
     if (tracklistString.length > 0) {
 
         // add header to tracklist 
-        tracklistString = 'tracklist:\n --------------------------\n' + tracklistString;
+        tracklistString = 'soundtrack:\n --------------------------\n' + tracklistString;
 
         // init new description body
         let updatedDescriptionBody = tracklistString;
