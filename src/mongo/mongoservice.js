@@ -247,7 +247,7 @@ const getUserDataByIdMongo = async (key, value) => {
         const users = database.collection('users');
 
         // Fetch the user from the database
-        const result = await users.findOne({ [key + '_uid']: value });
+        const result = await users.findOne({ [key + '_uid']: _.toString(value) });
 
         return result;
 
@@ -301,11 +301,8 @@ const getUserTokensByServiceId = async (key, value) => {
         const database = client.db('production');
         const users = database.collection('users');
 
-
         // Fetch the user from the database
         const result = await users.findOne({ [key + '_uid']: value});
-
-        console.log(`result: ${result}`)
 
         // Get the tokens based on key
         const tokens = {
