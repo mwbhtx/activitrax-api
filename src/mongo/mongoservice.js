@@ -254,7 +254,7 @@ const storeActivityInMongoDB = async (auth0_uid, activity) => {
         activity.auth0_uid = auth0_uid;
 
         // insert activity in database
-        await activities.insertOne({ activity_details: activity });
+        await activities.insertOne(activity);
 
     } catch (err) {
         console.log(err.stack);
@@ -275,7 +275,7 @@ const storeTracklistInMongoDB = async (auth0_uid, spotify_tracklist, strava_acti
         spotify_tracklist.strava_activity_id = strava_activity_id;
 
         // Store the activities in the database
-        await tracklists.insertOne({ tracklist_details: spotify_tracklist });
+        await tracklists.insertOne(spotify_tracklist);
 
     } catch (err) {
         console.log(err.stack);
