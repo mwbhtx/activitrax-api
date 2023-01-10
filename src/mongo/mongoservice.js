@@ -294,8 +294,6 @@ const deleteUserDataByIdMongo = async (key, value, fields) => {
 // get user access tokens and refresh tokens for a service using key and value args
 const getUserTokensByServiceId = async (key, value) => {
 
-    console.log('fetching tokens for ' + key + '_uid ' + value + '')
-
     try {
         await client.connect();
         const database = client.db('production');
