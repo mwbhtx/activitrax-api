@@ -115,7 +115,6 @@ const fetchStravaActivityDetails = async (uid, stravaTokens, activity_id) => {
     }
 
     const response = await sendStravaApiRequest(uid, reqConfig, stravaTokens)
-    console.log('activity came back')
     return response.data
 
 }
@@ -206,12 +205,8 @@ const processStravaActivityCreated = async (strava_uid, activity_id) => {
     const spotify_uid = _.get(userData, 'spotify_uid');
     const auth0_uid = _.get(userData, 'auth0_uid');
 
-    console.log('fetching activity')
-
     // fetch activity details
     let activity = await fetchStravaActivityDetails(strava_uid, stravaTokens, activity_id);
-
-    console.log("Activity: ", activity)
 
     // get activity start time and end time
     const startDateTimeMillis = new Date(activity.start_date).getTime();
