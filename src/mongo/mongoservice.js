@@ -4,6 +4,7 @@ const uri = process.env.ACTIVITRAX_MONGO_URI;
 const client = new MongoClient(uri);
 
 const _ = require('lodash');
+const { minifyStravaActivity } = require("../strava/strava.service");
 
 const getUserStravaTokens = async (auth0_uid) => {
 
@@ -231,7 +232,7 @@ const getUserConfigForClient = async (auth0_uid) => {
     }
 
     if (_.get(userProfile, "last_strava_activity")) {
-        userConfig.last_strava_activity = userProfile.last_strava_activity
+        userConfig.last_strava_activity = minifyStravaActivity(_.get(userProfile, "last_strava_activity"))
     }
 
     return userConfig;

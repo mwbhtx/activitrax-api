@@ -1,7 +1,7 @@
 const axios = require("axios");
 const spotifyClientId = 'REDACTED_SPOTIFY_CLIENT_ID'
 const _ = require('lodash');
-const { updateUserTokens, updateUserDataByIdMongo, getUserTokensByServiceId } = require("../mongo/mongoservice");
+const { updateUserDataByIdMongo, getUserTokensByServiceId } = require("../mongo/mongoservice");
 
 const connectSpotifyService = async (auth0_uid, auth_token) => {
 
