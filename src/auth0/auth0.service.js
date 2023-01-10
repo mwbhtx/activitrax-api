@@ -5,6 +5,7 @@ const auth0TokenExchangeUrl = 'https://dev-lpah3aos.us.auth0.com/oauth/token'
 const m2mClientId = 'J4p3DGQHQmcsrKgznHeKFDMM2DR0aLcN'
 
 const _ = require('lodash');
+const { getUserDataByIdMongo, updateUserDataByIdMongo } = require('../mongo/mongoservice');
 
 const getAuth0ManagementToken = async () => {
 
@@ -45,30 +46,6 @@ const addUserActivityData = async (uid, activity) => {
 
     await axios.request(setUserProfileRequestOptions)
 
-}
-
-const getUserConfigForClient = async (uid) => {
-
-    const userProfile = await getUserData(uid);
-
-    const userConfig = {
-        connections: {}
-    }
-
-    const userConnections = _.get(userProfile, 'app_metadata.connections');
-    if (userConnections) {
-        for (let key of Object.keys(userConnections)) {
-            userConfig.connections[key] = true
-        }
-    }
-
-    const last_strava_activity = _.get(userProfile, 'user_metadata.last_strava_activity');
-    if (last_strava_activity) {
-        userConfig.last_strava_activity = last_strava_activity;
-    }
-
-
-    return userConfig;
 }
 
 const searchAuth0UserByQuery = async (query) => {
@@ -150,7 +127,7 @@ const searchAuth0UserByStravaId = async (stravaId) => {
     return user;
 }
 
-const getUserData = async (uid) => {
+const getUserDataAuth0 = async (uid) => {
 
     const auth0_management_token = await getAuth0ManagementToken();
 
@@ -245,22 +222,11 @@ const getUserMetaData = async (uid) => {
     return userMetaDataResponse.data.app_metadata;
 }
 
-const deleteUserConnectionData = async (uid, connection) => {
-
-    const userData = await getAppMetaData(uid);
-    delete userData.connections[connection];
-    await setUserConnectionData(uid, userData.connections);
-
-}
-
-
 module.exports = {
     addUserActivityData,
-    getUserConfigForClient,
     setUserConnectionData,
-    getUserData,
+    getUserDataAuth0,
     getAppMetaData,
-    deleteUserConnectionData,
     addUserConnectionData,
     searchAuth0UserByStravaId,
     searchAuth0UserBySpotifyId,

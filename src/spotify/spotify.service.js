@@ -1,10 +1,9 @@
 const axios = require("axios");
-const { addUserConnectionData, searchAuth0UserBySpotifyId, updateUserServiceTokens } = require("../auth0/auth0.service");
-const jwt_decode = require('jwt-decode');
 const spotifyClientId = '2d496310f6db494791df2b41b9c2342d'
 const _ = require('lodash');
+const { updateUserTokens, updateUserDataByIdMongo, getUserTokensByServiceId } = require("../mongo/mongoservice");
 
-const connectSpotifyService = async (user_id, auth_token) => {
+const connectSpotifyService = async (auth0_uid, auth_token) => {
 
     // exchange spotify authorization token for an access + refresh token
     const reqConfig = {
@@ -26,24 +25,24 @@ const connectSpotifyService = async (user_id, auth_token) => {
 
     // Parse response
     const connectionData = {
-        spotify: {
-            access_token: _.get(spotifyResponse, 'data.access_token'),
-            refresh_token: _.get(spotifyResponse, 'data.refresh_token')
-        }
+        access_token: _.get(spotifyResponse, 'data.access_token'),
+        refresh_token: _.get(spotifyResponse, 'data.refresh_token')
     }
 
     // fetch spotify user profile with tokens
-    const userProfile = await getSpotifyUserDetails(user_id, connectionData.spotify);
+    const userProfile = await getSpotifyUserDetails(auth0_uid, connectionData);
 
-    // store spotify user id in connection data
-    _.set(connectionData, 'spotify.id', _.get(userProfile, 'id'));
+    const userUpdate = {
+        spotify_access_token: _.get(spotifyResponse, 'data.access_token'),
+        spotify_refresh_token: _.get(spotifyResponse, 'data.refresh_token'),
+        spotify_uid: _.get(userProfile, 'id'),
+    }
 
-    // store user service data in auth0
-    await addUserConnectionData(user_id, connectionData);
-
+    // save spotify user profile to mongodb
+    await updateUserDataByIdMongo("auth0", auth0_uid, userUpdate);
 }
 
-const exchangeSpotifyRefreshToken = async (uid, refresh_token) => {
+const exchangeSpotifyRefreshToken = async (spotify_uid, refresh_token) => {
 
     // fetch spotify user access_token / refresh_token if expired
     const reqConfig = {
@@ -63,25 +62,25 @@ const exchangeSpotifyRefreshToken = async (uid, refresh_token) => {
 
     // exchange tokens
     const response = await axios(reqConfig)
-
-    // Parse response
-    const new_tokens = {
-        refresh_token: _.get(response, 'data.refresh_token', refresh_token),
-        access_token: _.get(response, 'data.access_token')
+    
+    // userUpdate
+    const userUpdate = {
+        spotify_access_token: _.get(response, 'data.access_token'),
+        spotify_refresh_token: _.get(response, 'data.refresh_token'),
     }
 
-    // save new refresh token / access token to auth0 user metadata
-    await updateUserServiceTokens(uid, 'spotify', new_tokens)
+    // save spotify user profile to mongodb
+    await updateUserDataByIdMongo("spotify", spotify_uid, userUpdate);
 
     // return new access token
-    return new_tokens
+    return { access_token: _.get(response, 'data.access_token'), refresh_token: _.get(response, 'data.refresh_token') }
 
 }
 
 const sendSpotifyApiRequest = async (uid, reqConfig, tokens) => {
 
     if (!tokens) {
-        tokens = await getSpotifyApiTokens(uid);
+        tokens = await getUserTokensByServiceId("spotify", uid)
     }
 
     try {
@@ -152,7 +151,7 @@ const fetchSpotifyTracks = async (uid, tokens, start_time, end_time) => {
 const getSpotifyUserDetails = async (uid, tokens) => {
 
     if (!tokens) {
-        tokens = await getSpotifyApiTokens(uid)
+        tokens = await getUserTokensByServiceId("spotify", uid)
     }
 
     const reqConfig = {
@@ -168,22 +167,7 @@ const getSpotifyUserDetails = async (uid, tokens) => {
     return response.data
 }
 
-const getSpotifyApiTokens = async (uid) => {
-    const userData = await searchAuth0UserBySpotifyId(uid);
-    if (!userData) { throw new Error("User not found") }
-    const response = {
-        access_token: _.get(userData, 'app_metadata.connections.spotify.access_token'),
-        refresh_token: _.get(userData, 'app_metadata.connections.spotify.refresh_token')
-    }
-    if (!response.access_token || !response.refresh_token) {
-        throw new Error("User has not connected Spotify")
-    }
-    return response
-}
-
-
 module.exports = {
-    getSpotifyApiTokens,
     connectSpotifyService,
     fetchSpotifyTracks,
     getSpotifyUserDetails,

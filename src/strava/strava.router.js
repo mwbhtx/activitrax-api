@@ -5,7 +5,7 @@ const axios = require("axios");
 const { validateAccessToken } = require("../middleware/auth0.middleware.js");
 
 const {
-    setUserConnectionData, deleteUserConnectionData
+    setUserConnectionData
 } = require("../auth0/auth0.service");
 
 const { exchangeStravaAuthToken, createStravaWebhook, deleteStravaWebhook, getStravaWebhookDetails, processStravaActivityCreated, getStravaUserProfile } = require("./strava.service");
@@ -13,21 +13,6 @@ const { exchangeStravaAuthToken, createStravaWebhook, deleteStravaWebhook, getSt
 const stravaRouter = express.Router();
 
 const _ = require('lodash');
-
-stravaRouter.post('/disconnect', validateAccessToken, async (req, res) => {
-
-    try {
-        const uid = req.auth.payload.sub;
-        await deleteUserConnectionData(uid, 'strava');
-        res.status(200).json({ message: 'success' });
-    }
-    catch (error) {
-        const error_message = _.get(error, 'response.data');
-        console.log(JSON.stringify(error_message) || error);
-        res.status(500).json({ message: 'server error' });
-    }
-
-})
 
 stravaRouter.get('/user_profile', validateAccessToken, async (req, res) => {
     try {

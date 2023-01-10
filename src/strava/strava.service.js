@@ -6,6 +6,7 @@ const stravaClientId = '75032'
 const _ = require('lodash');
 const { join } = require('lodash');
 const moment = require('moment');
+const { updateUserTokens, storeTracklistInMongoDB, storeActivityInMongoDB, updateUserDataByIdMongo, getUserTokensByServiceId, getUserDataByIdMongo } = require('../mongo/mongoservice');
 
 
 const getStravaApiToken = async (uid) => {
@@ -58,16 +59,14 @@ const exchangeStravaAuthToken = async (uid, auth_token) => {
     const stravaResponse = await axios(reqConfig)
 
     // Parse response
-    const serviceData = {
-        strava: {
-            access_token: stravaResponse.data.access_token,
-            refresh_token: stravaResponse.data.refresh_token,
-            id: stravaResponse.data.athlete.id,
-        }
+    const userUpdate = {
+        strava_access_token: stravaResponse.data.access_token,
+        strava_refresh_token: stravaResponse.data.refresh_token,
+        strava_uid: stravaResponse.data.athlete.id,
     }
 
-    // store user service data in auth0
-    await addUserConnectionData(uid, serviceData);
+    // update user data in mongo
+    await updateUserDataByIdMongo("auth0", uid, userUpdate)
 
 }
 
@@ -138,7 +137,7 @@ const fetchStravaActivityDetails = async (uid, stravaTokens, activity_id) => {
 const sendStravaApiRequest = async (uid, reqConfig, tokens) => {
 
     if (!tokens) {
-        tokens = await getStravaApiToken(uid);
+        tokens = await getUserTokensByServiceId("strava", uid)
     }
 
     try {
@@ -160,45 +159,37 @@ const sendStravaApiRequest = async (uid, reqConfig, tokens) => {
 
 }
 
-const processStravaActivityCreated = async (user_id, activity_id) => {
+const processStravaActivityCreated = async (strava_uid, activity_id) => {
 
-    // fetch auth0 user data to get access tokens
-    const userData = await searchAuth0UserByQuery(`app_metadata.connections.strava.id:${user_id}`);
+    // fetch user data
+    const userData = await getUserDataByIdMongo("strava", strava_uid)
+
 
     // extract strava acess token
     const stravaTokens = {
-        access_token: _.get(userData, 'app_metadata.connections.strava.access_token'),
-        refresh_token: _.get(userData, 'app_metadata.connections.strava.refresh_token'),
+        access_token: _.get(userData, 'strava_access_token'),
+        refresh_token: _.get(userData, 'strava_refresh_token')
     }
 
     // extract spotify access token
     const spotifyTokens = {
-        access_token: _.get(userData, 'app_metadata.connections.spotify.access_token'),
-        refresh_token: _.get(userData, 'app_metadata.connections.spotify.refresh_token'),
+        access_token: _.get(userData, 'spotify_access_token'),
+        refresh_token: _.get(userData, 'spotify_refresh_token')
     }
 
     // extract spotify user id
-    const spotify_id = _.get(userData, 'app_metadata.connections.spotify.id');
+    const spotify_uid = _.get(userData, 'spotify_uid');
+    const auth0_uid = _.get(userData, 'auth0_uid');
 
     // fetch activity details
-    let activity = await fetchStravaActivityDetails(user_id, stravaTokens, activity_id);
+    let activity = await fetchStravaActivityDetails(strava_uid, stravaTokens, activity_id);
 
     // get activity start time and end time
     const startDateTimeMillis = new Date(activity.start_date).getTime();
     const endDateTimeMillis = startDateTimeMillis + (activity.elapsed_time * 1000);
 
     // fetch spotify tracks within activity time range
-    const trackList = await fetchSpotifyTracks(spotify_id, spotifyTokens, startDateTimeMillis, endDateTimeMillis);
-
-    // parse tracklist string to append to activity description
-    let tracklistString = '';
-
-    // for each track in tracklist, append to description string as a minified list
-    trackList.forEach((track, index) => {
-        tracklistString += `- ${track.artist} - ${track.name}\n`;
-    })
-
-    // Parse data from strava activity and store in user_metadata
+    const trackList = await fetchSpotifyTracks(spotify_uid, spotifyTokens, startDateTimeMillis, endDateTimeMillis);
 
     // Get local start date time object from strava activity
     const local_start_datetime = activity.start_date_local;
@@ -232,36 +223,42 @@ const processStravaActivityCreated = async (user_id, activity_id) => {
         tracklist: trackList
     }
 
-    // get auth0 user id
-    const auth0UserId = userData.user_id;
-
-    // store activity data in auth0
-    await addUserActivityData(auth0UserId, activityData);
-
     // If there are tracks in the tracklist, prepend the description with a header
-    if (tracklistString.length > 0) {
+    if (trackList.length > 0) {
+
+        // store tracklist in mongodb
+        await storeTracklistInMongoDB(auth0_uid, tracklist, activity.id);
+
+        // store activity in mongodb
+        await storeActivityInMongoDB(auth0_uid, activity);
+
+        // parse tracklist string to append to activity description
+        let newActivityDescription = '';
+
+        // for each track in tracklist, append to description string as a minified list
+        trackList.forEach((track, index) => {
+            newActivityDescription += `- ${track.artist} - ${track.name}\n`;
+        })
 
         // add header to tracklist 
-        tracklistString = 'soundtrack:\n --------------------------\n' + tracklistString;
+        newActivityDescription = 'soundtrack:\n --------------------------\n' + newActivityDescription;
 
-        // init new description body
-        let updatedDescriptionBody = tracklistString;
+        // add footer to tracklist
+        newActivityDescription += '--------------------------\n- provided by activitrax.io'
 
         // because there may be other webhooks in the queue, wait for the activity to be updated before continuing
         setTimeout(async () => {
+
             // fetch activity details again to make sure it has been updated
-            activity = await fetchStravaActivityDetails(user_id, stravaTokens, activity_id);
+            activity = await fetchStravaActivityDetails(strava_uid, stravaTokens, activity_id);
 
             // if there was already a description, append the tracklist to the end
             if (activity.description) {
-                updatedDescriptionBody = activity.description + '\n\n' + tracklistString
+                newActivityDescription = activity.description + '\n\n' + newActivityDescription
             }
 
-            // add company info
-            updatedDescriptionBody += '--------------------------\n- provided by activitrax.io'
-
-            await updateStravaActivity(user_id, activity_id, updatedDescriptionBody);
-            console.log(`Update: athlete: ${user_id}, activity ${activity_id}, ${trackList.length} tracks }`)
+            await updateStravaActivity(strava_uid, activity_id, newActivityDescription);
+            console.log(`Update: athlete: ${strava_uid}, activity ${activity_id}, ${trackList.length} tracks }`)
 
         }, 5000);
 
@@ -289,8 +286,13 @@ const exchangeStravaRefreshToken = async (uid, refresh_token) => {
         access_token: _.get(response, 'data.access_token')
     }
 
-    // save new refresh token / access token to auth0 user metadata
-    await updateUserServiceTokens(uid, 'strava', new_tokens)
+    // update user tokens in mongodb
+    const userUpdate = {
+        strava_access_token: new_tokens.access_token,
+        strava_refresh_token: new_tokens.refresh_token
+    }
+
+    await updateUserDataByIdMongo("strava", uid, userUpdate)
 
     // return new access token
     return new_tokens
@@ -298,7 +300,7 @@ const exchangeStravaRefreshToken = async (uid, refresh_token) => {
 
 const updateStravaActivity = async (user_id, activity_id, update_body) => {
 
-    const stravaTokens = await getStravaApiToken(user_id);
+    const stravaTokens = await getUserTokensByServiceId("strava", user_id)
 
     // update activity with spotify playlist
     const reqConfig = {

@@ -9,8 +9,9 @@ const auth0Router = express.Router();
 const _ = require('lodash');
 
 const {
-    getUserConfigForClient, deleteUserConnectionData, searchAuth0UserByStravaId
+    searchAuth0UserByStravaId
 } = require("../auth0/auth0.service");
+const { getUserConfigForClient, deleteUserConnectionData } = require("../mongo/mongoservice.js");
 
 auth0Router.get("/user_config", validateAccessToken, async (req, res) => {
     try {
