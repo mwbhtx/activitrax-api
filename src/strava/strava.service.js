@@ -115,6 +115,7 @@ const fetchStravaActivityDetails = async (uid, stravaTokens, activity_id) => {
     }
 
     const response = await sendStravaApiRequest(uid, reqConfig, stravaTokens)
+    console.log('activity came back')
     return response.data
 
 }
@@ -187,6 +188,7 @@ const processStravaActivityCreated = async (strava_uid, activity_id) => {
     // fetch user data
     const userData = await getUserDataByIdMongo("strava", strava_uid)
 
+    console.log(`user data: ${JSON.stringify(userData, null, 2)}`)
 
     // extract strava acess token
     const stravaTokens = {
@@ -203,6 +205,8 @@ const processStravaActivityCreated = async (strava_uid, activity_id) => {
     // extract spotify user id
     const spotify_uid = _.get(userData, 'spotify_uid');
     const auth0_uid = _.get(userData, 'auth0_uid');
+
+    console.log('fetching activity')
 
     // fetch activity details
     let activity = await fetchStravaActivityDetails(strava_uid, stravaTokens, activity_id);
