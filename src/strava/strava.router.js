@@ -1,23 +1,17 @@
 const express = require("express");
 
-const axios = require("axios");
-
 const { validateAccessToken } = require("../middleware/auth0.middleware.js");
-
-const {
-    setUserConnectionData
-} = require("../auth0/auth0.service");
-
-const { exchangeStravaAuthToken, createStravaWebhook, deleteStravaWebhook, getStravaWebhookDetails, processStravaActivityCreated, getStravaUserProfile } = require("./strava.service");
 
 const stravaRouter = express.Router();
 
 const _ = require('lodash');
 
+const mongo = require("../mongo/mongoservice.js");
+
 stravaRouter.get('/user_profile', validateAccessToken, async (req, res) => {
     try {
         const strava_uid = req.query.user_id
-        const user_profile = await getStravaUserProfile(strava_uid);
+        const user_profile = await mongo.getStravaUserProfile(strava_uid);
         res.status(200).json(user_profile);
     }
     catch (error) {
@@ -34,7 +28,7 @@ stravaRouter.post('/webhook_callback', async (req, res) => {
         const { owner_id, object_id, aspect_type, object_type } = req.body;
         console.log('webhook post received', owner_id, object_id, aspect_type)
         if (aspect_type === 'create' && object_type === 'activity') {
-            await processStravaActivityCreated(owner_id, object_id);
+            await mongo.processStravaActivityCreated(owner_id, object_id);
         }
         res.status(200).json({ message: 'success' });
 
@@ -51,7 +45,7 @@ stravaRouter.post('/webhook_callback', async (req, res) => {
 stravaRouter.get('/webhook_details', validateAccessToken, async (req, res) => {
 
     try {
-        const details = await getStravaWebhookDetails();
+        const details = await mongo.getStravaWebhookDetails();
         res.status(200).json({ message: 'success' });
     }
     catch (error) {
@@ -81,7 +75,7 @@ stravaRouter.get('/webhook_callback', async (req, res) => {
 
 stravaRouter.post('/webhook_create', validateAccessToken, async (req, res) => {
     try {
-        await createStravaWebhook();
+        await mongo.createStravaWebhook();
         res.status(200).json({ message: 'success' })
     }
     catch (error) {
@@ -94,7 +88,7 @@ stravaRouter.post('/webhook_create', validateAccessToken, async (req, res) => {
 
 stravaRouter.post('/webhook_delete', validateAccessToken, async (req, res) => {
     try {
-        await deleteStravaWebhook();
+        await mongo.deleteStravaWebhook();
         res.status(200).json({ message: 'success' })
     }
     catch (error) {
@@ -110,7 +104,7 @@ stravaRouter.post("/exchange_token", validateAccessToken, async (req, res) => {
 
         const auth_token = req.body.auth_token;
         const user_id = req.auth.payload.sub;
-        await exchangeStravaAuthToken(user_id, auth_token);
+        await mongo.exchangeStravaAuthToken(user_id, auth_token);
         res.status(200).json({ message: 'success' });
     } catch (error) {
         const error_message = _.get(error, 'response.data');
