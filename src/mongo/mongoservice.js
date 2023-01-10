@@ -72,7 +72,7 @@ const exchangeSpotifyRefreshToken = async (spotify_uid, refresh_token) => {
 
     // exchange tokens
     const response = await axios(reqConfig)
-    
+
     // userUpdate
     const userUpdate = {
         spotify_access_token: _.get(response, 'data.access_token'),
@@ -253,8 +253,8 @@ const storeActivityInMongoDB = async (auth0_uid, activity) => {
         // append auth0_uid to each activity
         activity.auth0_uid = auth0_uid;
 
-        // Store the activities in the database
-        await activities.insertOne(activities);
+        // insert activity in database
+        await activities.insertOne({ activity_details: activity });
 
     } catch (err) {
         console.log(err.stack);
@@ -275,7 +275,7 @@ const storeTracklistInMongoDB = async (auth0_uid, spotify_tracklist, strava_acti
         spotify_tracklist.strava_activity_id = strava_activity_id;
 
         // Store the activities in the database
-        await tracklists.insertOne(spotify_tracklist);
+        await tracklists.insertOne({ tracklist_details: spotify_tracklist });
 
     } catch (err) {
         console.log(err.stack);
@@ -347,8 +347,9 @@ const updateUserDataByIdMongo = async (key, value, data) => {
         const database = client.db('production');
         const users = database.collection('users');
 
+
         // Update the user in the database
-        await users.updateOne({ [key + '_uid']: value }, { $set: data }, { upsert: true });
+        await users.updateOne({ [key + '_uid']: _.toString(value) }, { $set: data });
 
     } catch (err) {
         console.log(err.stack);
@@ -381,7 +382,7 @@ const getLastStravaActivity = async (auth0_uid) => {
         const activities = database.collection('activities');
 
         // Fetch the activities from the database
-        const result = await activities.find({ auth0_uid: auth0_uid }).sort({ start_date: -1 }).limit(1).toArray();
+        const result = await activities.find({ auth0_uid: auth0_uid }).sort({ start_date: -1 }).limit(1)
         return result;
 
     } catch (err) {
@@ -439,7 +440,7 @@ const setUserDataByIdMongo = async (key, value, data) => {
         const users = database.collection('users');
 
         // overwrite the user in the database
-        await users.updateOne({ [key + '_uid']: value }, { $set: data }, { upsert: false });
+        await users.updateOne({ [key + '_uid']: _.toString(value) }, { $set: data }, { upsert: false });
 
     }
     catch (err) {
@@ -457,7 +458,7 @@ const deleteUserDataByIdMongo = async (key, value, fields) => {
         const users = database.collection('users');
 
         // delete fields from the user in the database
-        await users.updateOne({ [key + '_uid']: value }, { $unset: fields }, { upsert: false });
+        await users.updateOne({ [key + '_uid']: _.toString(value) }, { $unset: fields }, { upsert: false });
     }
     catch (err) {
         console.log(err.stack);
@@ -473,7 +474,7 @@ const getUserTokensByServiceId = async (key, value) => {
         const users = database.collection('users');
 
         // Fetch the user from the database
-        const result = await users.findOne({ [key + '_uid']: value});
+        const result = await users.findOne({ [key + '_uid']: _.toString(value) });
 
         // Get the tokens based on key
         const tokens = {
@@ -705,7 +706,7 @@ const processStravaActivityCreated = async (strava_uid, activity_id) => {
     if (trackList.length > 0) {
 
         // store tracklist in mongodb
-        await storeTracklistInMongoDB(auth0_uid, tracklist, activity.id);
+        await storeTracklistInMongoDB(auth0_uid, { tracklist: trackList }, activity.id);
 
         // store activity in mongodb
         await storeActivityInMongoDB(auth0_uid, activity);
