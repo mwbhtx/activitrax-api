@@ -224,24 +224,6 @@ const getUserSpotifyTokens = async (auth0_uid) => {
 
 }
 
-// Update User Record in MongoDb
-const updateUserData = async (auth0_uid, data) => {
-
-    try {
-
-        await client.connect();
-        const database = client.db('production');
-        const users = database.collection('users');
-
-        // Update the user in the database
-        await users.updateOne({ auth0_uid: auth0_uid }, { $set: data }, { upsert: true });
-
-    } catch (err) {
-        console.log(err.stack);
-    }
-
-}
-
 // Store Strava Activities in MongoDb
 const storeActivityInMongoDB = async (auth0_uid, activity) => {
 
@@ -349,7 +331,7 @@ const updateUserDataByIdMongo = async (key, value, data) => {
 
 
         // Update the user in the database
-        await users.updateOne({ [key + '_uid']: _.toString(value) }, { $set: data });
+        await users.updateOne({ [key + '_uid']: _.toString(value) }, { $set: data }, { upsert: true });
 
     } catch (err) {
         console.log(err.stack);
@@ -855,7 +837,6 @@ module.exports = {
     storeActivityInMongoDB,
     storeTracklistInMongoDB,
     fetchTracklist,
-    updateUserData,
     getUserTokensByServiceId,
     getUserStravaTokens,
     getUserConfigForClient,
