@@ -405,7 +405,7 @@ const getUserConfigForClient = async (auth0_uid) => {
     }
 
     if (_.get(userProfile, "last_strava_activity")) {
-        userConfig.last_strava_activity = minifyStravaActivity(_.get(userProfile, "last_strava_activity"))
+        userConfig.last_strava_activity = await minifyStravaActivity(_.get(userProfile, "last_strava_activity"))
     }
 
     return userConfig;
@@ -627,7 +627,26 @@ const sendStravaApiRequest = async (strava_uid, reqConfig, tokens) => {
 
 }
 
-const minifyStravaActivity = (activity) => {
+const getStravaActivityTracklist = async (activity_id) => {
+
+    // Fetch Tracklist that pairs with the strava_activity_id from mongodb
+    try {
+        await client.connect();
+        const database = client.db('production');
+        const tracklists = database.collection('tracklists');
+
+        // Fetch the tracklist from the database
+        const result = await tracklists.findOne({ strava_activity_id: activity_id });
+        return result;
+
+    }
+    catch (err) {
+        console.log(err.stack);
+    }
+
+}
+
+const minifyStravaActivity = async (activity) => {
 
     try {
         // Get local start date time object from strava activity
@@ -644,6 +663,9 @@ const minifyStravaActivity = (activity) => {
 
         // limit distance in miles to 2 decimal places
         const distance_miles_rounded = distance_miles.toFixed(2);
+
+        // fetch tracklist for this activity
+        const trackList = await getStravaActivityTracklist(activity.id)
 
         const activityData = {
             id: activity.id,
