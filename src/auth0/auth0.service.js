@@ -47,16 +47,6 @@ const searchAuth0UserByQuery = async (query) => {
     }
 }
 
-const searchAuth0UserBySpotifyId = async (spotifyId) => {
-    const user = await searchAuth0UserByQuery(`app_metadata.connections.spotify.id:${spotifyId}`);
-    return user;
-}
-
-const searchAuth0UserByStravaId = async (stravaId) => {
-    const user = await searchAuth0UserByQuery(`app_metadata.connections.strava.id:${stravaId}`);
-    return user;
-}
-
 const getUserDataAuth0 = async (uid) => {
 
     const auth0_management_token = await getAuth0ManagementToken();
@@ -117,8 +107,6 @@ const getUserMetaData = async (uid) => {
 module.exports = {
     getUserDataAuth0,
     getAppMetaData,
-    searchAuth0UserByStravaId,
-    searchAuth0UserBySpotifyId,
     searchAuth0UserByQuery,
     getUserMetaData,
 };
