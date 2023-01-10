@@ -405,7 +405,7 @@ const getUserConfigForClient = async (auth0_uid) => {
     }
 
     if (_.get(userProfile, "last_strava_activity")) {
-        userConfig.last_strava_activity = strava.minifyStravaActivity(_.get(userProfile, "last_strava_activity"))
+        userConfig.last_strava_activity = minifyStravaActivity(_.get(userProfile, "last_strava_activity"))
     }
 
     return userConfig;
