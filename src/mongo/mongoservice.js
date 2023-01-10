@@ -294,13 +294,18 @@ const deleteUserDataByIdMongo = async (key, value, fields) => {
 // get user access tokens and refresh tokens for a service using key and value args
 const getUserTokensByServiceId = async (key, value) => {
 
+    console.log('fetching tokens for ' + key + '_uid ' + value + '')
+
     try {
         await client.connect();
         const database = client.db('production');
         const users = database.collection('users');
 
+
         // Fetch the user from the database
-        const result = await users.findOne({ [key + '_uid']: value });
+        const result = await users.findOne({ [key + '_uid']: value});
+
+        console.log(`result: ${result}`)
 
         // Get the tokens based on key
         const tokens = {

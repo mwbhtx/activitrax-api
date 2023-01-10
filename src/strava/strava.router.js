@@ -16,9 +16,8 @@ const _ = require('lodash');
 
 stravaRouter.get('/user_profile', validateAccessToken, async (req, res) => {
     try {
-        const auth0_token = req.auth.token
         const strava_uid = req.query.user_id
-        const user_profile = await getStravaUserProfile(auth0_token, strava_uid);
+        const user_profile = await getStravaUserProfile(strava_uid);
         res.status(200).json(user_profile);
     }
     catch (error) {
@@ -34,10 +33,11 @@ stravaRouter.post('/webhook_callback', async (req, res) => {
     try {
         const { owner_id, object_id, aspect_type, object_type } = req.body;
         console.log('webhook post received', owner_id, object_id, aspect_type)
-        res.status(200).json({ message: 'success' });
         if (aspect_type === 'create' && object_type === 'activity') {
             await processStravaActivityCreated(owner_id, object_id);
         }
+        res.status(200).json({ message: 'success' });
+
     }
     catch (error) {
         const error_message = _.get(error, 'response.data');
