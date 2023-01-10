@@ -1,5 +1,4 @@
 const axios = require('axios')
-const { searchAuth0UserByStravaId } = require("../auth0/auth0.service");
 const { fetchSpotifyTracks } = require('../spotify/spotify.service');
 const stravaClientId = '75032'
 
@@ -146,39 +145,45 @@ const sendStravaApiRequest = async (strava_uid, reqConfig, tokens) => {
 
 const minifyStravaActivity = (activity) => {
 
-    // Get local start date time object from strava activity
-    const local_start_datetime = activity.start_date_local;
+    try {
+        // Get local start date time object from strava activity
+        const local_start_datetime = activity.start_date_local;
 
-    // Create formatted string for start date as DD/MM/YYYY
-    const local_start_date_formatted = moment(local_start_datetime).format('DD/MM/YYYY');
+        // Create formatted string for start date as DD/MM/YYYY
+        const local_start_date_formatted = moment(local_start_datetime).format('DD/MM/YYYY');
 
-    // Create formatted string for start time as H:MM AM/PM
-    const local_start_time_formatted = moment(local_start_datetime).format('h:mm A');
+        // Create formatted string for start time as H:MM AM/PM
+        const local_start_time_formatted = moment(local_start_datetime).format('h:mm A');
 
-    // convert meters to miles
-    const distance_miles = activity.distance * 0.000621371;
+        // convert meters to miles
+        const distance_miles = activity.distance * 0.000621371;
 
-    // limit distance in miles to 2 decimal places
-    const distance_miles_rounded = distance_miles.toFixed(2);
+        // limit distance in miles to 2 decimal places
+        const distance_miles_rounded = distance_miles.toFixed(2);
 
-    const activityData = {
-        id: activity.id,
-        name: activity.name,
-        unit_preference: activity.unit_preference,
-        type: activity.type,
-        start_date: activity.start_date,
-        start_date_formatted: local_start_date_formatted,
-        start_time_formatted: local_start_time_formatted,
-        elapsed_time: activity.elapsed_time,
-        distance_meters: activity.distance,
-        distance_miles: distance_miles_rounded,
-        average_speed: activity.average_speed,
-        calories: activity.calories,
-        track_count: _.toString(trackList.length),
-        tracklist: trackList
+        const activityData = {
+            id: activity.id,
+            name: activity.name,
+            unit_preference: activity.unit_preference,
+            type: activity.type,
+            start_date: activity.start_date,
+            start_date_formatted: local_start_date_formatted,
+            start_time_formatted: local_start_time_formatted,
+            elapsed_time: activity.elapsed_time,
+            distance_meters: activity.distance,
+            distance_miles: distance_miles_rounded,
+            average_speed: activity.average_speed,
+            calories: activity.calories,
+            track_count: _.toString(trackList.length),
+            tracklist: trackList
+        }
+
+        return activityData
     }
-
-    return activityData
+    catch (error) {
+        console.log(`error minifying strava activity: ${error}`)
+        return null
+    }
 
 }
 
@@ -223,6 +228,9 @@ const processStravaActivityCreated = async (strava_uid, activity_id) => {
 
         // store activity in mongodb
         await storeActivityInMongoDB(auth0_uid, activity);
+
+        // add last_strava_activity to user data
+        await updateUserDataByIdMongo("strava", strava_uid, { last_strava_activity: activity })
 
         // parse tracklist string to append to activity description
         let newActivityDescription = '';
@@ -344,5 +352,6 @@ module.exports = {
     deleteStravaWebhook,
     getStravaWebhookDetails,
     processStravaActivityCreated,
-    getStravaUserProfile
+    getStravaUserProfile,
+    minifyStravaActivity
 }

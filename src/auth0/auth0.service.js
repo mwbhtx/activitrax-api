@@ -5,7 +5,6 @@ const auth0TokenExchangeUrl = 'https://dev-lpah3aos.us.auth0.com/oauth/token'
 const m2mClientId = 'J4p3DGQHQmcsrKgznHeKFDMM2DR0aLcN'
 
 const _ = require('lodash');
-const { getUserDataByIdMongo, updateUserDataByIdMongo } = require('../mongo/mongoservice');
 
 const getAuth0ManagementToken = async () => {
 
@@ -24,28 +23,6 @@ const getAuth0ManagementToken = async () => {
     const response = await axios.request(auth0ManagementRequestOptions)
     const auth0_management_token = response.data.access_token;
     return auth0_management_token;
-}
-
-const addUserActivityData = async (uid, activity) => {
-
-    const auth0_management_token = await getAuth0ManagementToken();
-
-    const setUserProfileRequestOptions = {
-        method: 'PATCH',
-        url: auth0ApiUrl + `/users/${uid}`,
-        headers: {
-            'content-type': 'application/json',
-            'authorization': 'Bearer ' + auth0_management_token,
-        },
-        data: {
-            user_metadata: {
-                last_strava_activity: activity
-            }
-        }
-    }
-
-    await axios.request(setUserProfileRequestOptions)
-
 }
 
 const searchAuth0UserByQuery = async (query) => {
@@ -68,53 +45,6 @@ const searchAuth0UserByQuery = async (query) => {
     if (response.data.length === 1) {
         return response.data[0];
     }
-}
-
-
-const updateUserServiceTokens = async (uid, service, tokens) => {
-
-    const auth0_management_token = await getAuth0ManagementToken();
-    let auth0UserId = null
-    let userData = null;
-
-    if (service === 'spotify') {
-        userData = await searchAuth0UserBySpotifyId(uid);
-        auth0UserId = userData.user_id;
-        if (!auth0UserId) {
-            throw new Error('User not found when exchanging spotify refresh token')
-        } else {
-            _.set(userData, 'app_metadata.connections.spotify.refresh_token', tokens.refresh_token);
-            _.set(userData, 'app_metadata.connections.spotify.access_token', tokens.access_token);
-        }
-    } else if (service === 'strava') {
-        userData = await searchAuth0UserByStravaId(uid);
-        auth0UserId = userData.user_id;
-        if (!auth0UserId) {
-            throw new Error('User not found when exchanging strava refresh token')
-        } else {
-            _.set(userData, 'app_metadata.connections.strava.refresh_token', tokens.refresh_token);
-            _.set(userData, 'app_metadata.connections.strava.access_token', tokens.access_token);
-        }
-    }
-
-    // save user data back
-    if (userData && auth0UserId) {
-        const setUserProfileRequestOptions = {
-            method: 'PATCH',
-            url: auth0ApiUrl + `/users/${auth0UserId}`,
-            headers: {
-                'content-type': 'application/json',
-                'authorization': 'Bearer ' + auth0_management_token,
-            },
-            data: {
-                app_metadata: userData.app_metadata
-            }
-        }
-
-        await axios.request(setUserProfileRequestOptions)
-
-    }
-
 }
 
 const searchAuth0UserBySpotifyId = async (spotifyId) => {
@@ -164,44 +94,6 @@ const getAppMetaData = async (uid) => {
     return userMetaDataResponse.data.app_metadata;
 }
 
-const setUserConnectionData = async (uid, connectionData) => {
-
-    const auth0_management_token = await getAuth0ManagementToken();
-
-    // save user data back
-    const setUserProfileRequestOptions = {
-        method: 'PATCH',
-        url: auth0ApiUrl + `/users/${uid}`,
-        headers: {
-            'content-type': 'application/json',
-            'authorization': 'Bearer ' + auth0_management_token,
-        },
-        data: {
-            app_metadata: {
-                connections: connectionData
-            }
-        }
-    }
-
-    const auth0Response = await axios.request(setUserProfileRequestOptions)
-    return auth0Response;
-
-}
-
-
-const addUserConnectionData = async (uid, connectionData) => {
-
-    const userAppMetadata = await getAppMetaData(uid);
-
-    const userConnectionObject = _.get(userAppMetadata, 'connections', {})
-
-    // merge new connection data with existing
-    const connectionsData = Object.assign(userConnectionObject, connectionData);
-
-    await setUserConnectionData(uid, connectionsData);
-
-}
-
 const getUserMetaData = async (uid) => {
 
     const auth0_management_token = await getAuth0ManagementToken();
@@ -223,14 +115,10 @@ const getUserMetaData = async (uid) => {
 }
 
 module.exports = {
-    addUserActivityData,
-    setUserConnectionData,
     getUserDataAuth0,
     getAppMetaData,
-    addUserConnectionData,
     searchAuth0UserByStravaId,
     searchAuth0UserBySpotifyId,
     searchAuth0UserByQuery,
-    updateUserServiceTokens,
     getUserMetaData,
 };
