@@ -665,10 +665,11 @@ const minifyStravaActivity = async (activity) => {
         const distance_miles_rounded = distance_miles.toFixed(2);
 
         // fetch tracklist for this activity
-        const trackList = await getStravaActivityTracklist(activity.id)
+        const trackListDetails = await getStravaActivityTracklist(activity.id)
+
+        const trackList = trackListDetails.tracklist
 
         const activityData = {
-            id: activity.id,
             name: activity.name,
             unit_preference: activity.unit_preference,
             type: activity.type,
