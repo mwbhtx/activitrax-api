@@ -728,10 +728,10 @@ const processStravaActivityCreated = async (strava_uid, activity_id) => {
         })
 
         // add header to tracklist 
-        newActivityDescription = 'soundtrack:\n --------------------------\n' + newActivityDescription;
+        newActivityDescription = '\n --------------------------\n' + newActivityDescription;
 
         // add footer to tracklist
-        newActivityDescription += '--------------------------\n- provided by activitrax.io'
+        newActivityDescription += '--------------------------\n- tracklist by activitrax.io'
 
         // because there may be other webhooks in the queue, wait for the activity to be updated before continuing
         setTimeout(async () => {
