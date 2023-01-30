@@ -73,18 +73,21 @@ const exchangeSpotifyRefreshToken = async (spotify_uid, refresh_token) => {
     // exchange tokens
     const response = await axios(reqConfig)
 
-    // userUpdate
+    // console.log(`Spotify Response: ${JSON.stringify(response.data)}`)
+
     const userUpdate = {
+        spotify_refresh_token: _.get(response, 'data.refresh_token', refresh_token),
         spotify_access_token: _.get(response, 'data.access_token'),
-        spotify_refresh_token: _.get(response, 'data.refresh_token'),
     }
+
+    // console.log(`new access token: ${spotify_access_token}`)
+    // console.log(`new refresh token: ${spotify_refresh_token}`)
 
     // save spotify user profile to mongodb
     await updateUserDataByIdMongo("spotify", spotify_uid, userUpdate);
 
     // return new access token
-    return { access_token: _.get(response, 'data.access_token'), refresh_token: _.get(response, 'data.refresh_token') }
-
+    return { access_token: userUpdate.spotify_access_token, refresh_token: userUpdate.spotify_refresh_token }
 }
 
 const sendSpotifyApiRequest = async (uid, reqConfig, tokens) => {
@@ -93,12 +96,15 @@ const sendSpotifyApiRequest = async (uid, reqConfig, tokens) => {
         tokens = await getUserTokensByServiceId("spotify", uid)
     }
 
+    // console.log(`Sending Spotify API request to ${reqConfig.url}`)
+    // console.log(`Spotify access token: ${tokens.access_token}`)
+    // console.log(`Spotify refresh token: ${tokens.refresh_token}`)
+
     try {
         const response = await axios(reqConfig)
         return response
     }
     catch (error) {
-
         // if access token expired, try to exchange refresh token
         if (error.response.status === 401) {
             const newTokens = await exchangeSpotifyRefreshToken(uid, tokens.refresh_token)
