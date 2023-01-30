@@ -730,14 +730,14 @@ const processStravaActivityCreated = async (strava_uid, activity_id) => {
 
         // for each track in tracklist, append to description string as a minified list
         trackList.forEach((track, index) => {
-            newActivityDescription += `- ${track.artist} - ${track.name}\n`;
+            newActivityDescription += `${track.artist} - ${track.name}\n`;
         })
 
         // add header to tracklist 
-        newActivityDescription = '\n --------------------------\n' + newActivityDescription;
+        newActivityDescription = '\n--------------------------\n' + newActivityDescription;
 
         // add footer to tracklist
-        newActivityDescription += '--------------------------\n- tracklist by activitrax.io'
+        newActivityDescription += '--------------------------\ntracklist by activitrax.io'
 
         // because there may be other webhooks in the queue, wait for the activity to be updated before continuing
         setTimeout(async () => {
@@ -836,6 +836,33 @@ const createStravaWebhook = async () => {
 
 }
 
+const getLastStravaActivityStrava = async (strava_uid) => {
+
+    const stravaTokens = await getUserTokensByServiceId("strava", strava_uid)
+    
+    const reqConfig = {
+        method: "GET",
+        url: "https://www.strava.com/api/v3/athlete/activities",
+        headers: {
+            "Content-Type": "application/json",
+            "authorization": `Bearer ${stravaTokens.access_token}`
+        }
+    }
+
+    const response = await sendStravaApiRequest(strava_uid, reqConfig, stravaTokens)
+    return _.get(response, 'data[0]', null)
+
+}
+const reprocessLastStravaActivity = async (strava_uid) => {
+
+    // get last strava activity from strava api for user
+    const lastStravaActivity = await getLastStravaActivityStrava(strava_uid);
+
+    if (lastStravaActivity) {
+        await processStravaActivityCreated(strava_uid, lastStravaActivity.id)
+    }
+}
+
 
 module.exports = {
     fetchStravaActivities,
@@ -865,4 +892,5 @@ module.exports = {
     getSpotifyUserDetails,
     sendSpotifyApiRequest,
     exchangeSpotifyRefreshToken,
+    reprocessLastStravaActivity
 }
