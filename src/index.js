@@ -12,9 +12,7 @@ const { spotifyRouter } = require("./spotify/spotify.router");
 
 dotenv.config();
 
-
 const PORT = process.env.PORT || 4000;
-const CLIENT_ORIGIN_URL = process.env.CLIENT_ORIGIN_URL;
 
 const app = express();
 const apiRouter = express.Router();
@@ -48,15 +46,6 @@ app.use((req, res, next) => {
 app.use(nocache());
 
 app.use(cors());
-
-// app.use(
-//   cors({
-//     origin: CLIENT_ORIGIN_URL,
-//     methods: ["GET"],
-//     allowedHeaders: ["Authorization", "Content-Type"],
-//     maxAge: 86400,
-//   })
-// );
 
 app.use("/api/v1", apiRouter);
 
