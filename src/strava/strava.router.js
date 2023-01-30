@@ -22,6 +22,19 @@ stravaRouter.get('/user_profile', validateAccessToken, async (req, res) => {
 
 })
 
+
+stravaRouter.post('/process-last-activity/:strava_uid', validateAccessToken, async (req, res) => {
+    try {
+        const strava_uid = req.params.strava_uid;
+        await mongo.reprocessLastStravaActivity(strava_uid);
+        res.status(200).json({ message: 'success' });
+    }
+    catch (error) {
+        const error_message = _.get(error, 'response.data');
+        res.status(500).json({ message: 'server error' });
+    }
+})
+
 stravaRouter.post('/webhook_callback', async (req, res) => {
 
     try {
