@@ -41,7 +41,7 @@ messagesRouter.get("/user", validateAccessToken, (req, res) => {
       grant_type: 'client_credentials',
       client_id: process.env.AUTH0_M2M_CLIENT_ID,
       client_secret: process.env.AUTH0_M2M_CLIENT_SECRET,
-      audience: 'https://dev-lpah3aos.us.auth0.com/api/v2/'
+      audience: process.env.AUTH0_AUDIENCE
     })
   };
 
