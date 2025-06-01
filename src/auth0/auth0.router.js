@@ -1,11 +1,7 @@
 const express = require("express");
-
 const { validateAccessToken } = require("../middleware/auth0.middleware.js");
-
 const auth0Router = express.Router();
-
 const _ = require('lodash');
-
 const mongo = require("../mongo/mongoservice.js");
 
 auth0Router.get("/user_config", validateAccessToken, async (req, res) => {
@@ -21,7 +17,6 @@ auth0Router.get("/user_config", validateAccessToken, async (req, res) => {
 })
 
 auth0Router.post('/disconnect_service', validateAccessToken, async (req, res) => {
-
     try {
         const uid = req.auth.payload.sub;
         const service = req.body.service_name;
@@ -33,7 +28,6 @@ auth0Router.post('/disconnect_service', validateAccessToken, async (req, res) =>
         console.log(JSON.stringify(error_message) || error);
         res.status(500).json({ message: 'server error' });
     }
-
 })
 
 module.exports = { auth0Router };
