@@ -2,7 +2,7 @@ const axios = require('axios');
 
 const auth0ApiUrl = 'https://dev-lpah3aos.us.auth0.com/api/v2';
 const auth0TokenExchangeUrl = 'https://dev-lpah3aos.us.auth0.com/oauth/token'
-const m2mClientId = 'J4p3DGQHQmcsrKgznHeKFDMM2DR0aLcN'
+const m2mClientId = process.env.ACTIVITRAX_M2M_CLIENT_ID;
 
 const _ = require('lodash');
 
