@@ -11,25 +11,28 @@ const { validateAccessToken } = require("../middleware/auth0.middleware.js");
 
 const messagesRouter = express.Router();
 
+// Test a public route request
 messagesRouter.get("/public", (req, res) => {
   const message = getPublicMessage();
 
   res.status(200).json(message);
 });
 
+// Test a protected route request
 messagesRouter.get("/protected", validateAccessToken, (req, res) => {
   const message = getProtectedMessage();
 
   res.status(200).json(message);
 });
 
+// Test an admin route request
 messagesRouter.get("/admin", validateAccessToken, (req, res) => {
   const message = getAdminMessage();
 
   res.status(200).json(message);
 });
 
-// Request to get Auth0 Management API M2M token
+// Request Auth0 Management API token
 messagesRouter.get("/auth0_management_token", validateAccessToken, (req, res) => {
 
   // fetch managemenet api from auth0
