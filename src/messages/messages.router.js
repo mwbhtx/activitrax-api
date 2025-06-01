@@ -1,5 +1,4 @@
 const express = require("express");
-
 const axios = require("axios");
 
 const {
@@ -14,28 +13,23 @@ const messagesRouter = express.Router();
 // Test a public route request
 messagesRouter.get("/public", (req, res) => {
   const message = getPublicMessage();
-
   res.status(200).json(message);
 });
 
 // Test a protected route request
 messagesRouter.get("/protected", validateAccessToken, (req, res) => {
   const message = getProtectedMessage();
-
   res.status(200).json(message);
 });
 
 // Test an admin route request
 messagesRouter.get("/admin", validateAccessToken, (req, res) => {
   const message = getAdminMessage();
-
   res.status(200).json(message);
 });
 
 // Request Auth0 Management API token
 messagesRouter.get("/auth0_management_token", validateAccessToken, (req, res) => {
-
-  // fetch managemenet api from auth0
   var options = {
     method: 'POST',
     url: 'https://dev-lpah3aos.us.auth0.com/oauth/token',
@@ -48,6 +42,8 @@ messagesRouter.get("/auth0_management_token", validateAccessToken, (req, res) =>
     })
   };
 
+  // fetch m2m management token from auth0
+  // TODO: Protect this route so that users must have the admin role to access it
   axios.request(options)
     .then(function (response) {
       const auth0_management_token = response.data.access_token;
@@ -57,7 +53,6 @@ messagesRouter.get("/auth0_management_token", validateAccessToken, (req, res) =>
       console.error(error);
       res.status(500).json({ message: 'server error' });
     });
-
 });
 
 module.exports = { messagesRouter };

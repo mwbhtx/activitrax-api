@@ -1,5 +1,4 @@
 const axios = require('axios');
-
 const auth0ApiUrl = 'https://dev-lpah3aos.us.auth0.com/api/v2';
 const auth0TokenExchangeUrl = 'https://dev-lpah3aos.us.auth0.com/oauth/token'
 const m2mClientId = process.env.AUTH0_M2M_CLIENT_ID;
@@ -7,7 +6,6 @@ const m2mClientId = process.env.AUTH0_M2M_CLIENT_ID;
 const _ = require('lodash');
 
 const getAuth0ManagementToken = async () => {
-
     const auth0ManagementRequestOptions = {
         method: 'POST',
         url: auth0TokenExchangeUrl,
@@ -26,9 +24,7 @@ const getAuth0ManagementToken = async () => {
 }
 
 const searchAuth0UserByQuery = async (query) => {
-
     const auth0_management_token = await getAuth0ManagementToken();
-
     const searchUserRequestOptions = {
         method: 'GET',
         url: auth0ApiUrl + '/users',
@@ -48,9 +44,7 @@ const searchAuth0UserByQuery = async (query) => {
 }
 
 const getUserDataAuth0 = async (uid) => {
-
     const auth0_management_token = await getAuth0ManagementToken();
-
     const userProfileRequestOptions = {
         method: 'GET',
         url: auth0ApiUrl + `/users/${uid}`,
@@ -65,9 +59,7 @@ const getUserDataAuth0 = async (uid) => {
 }
 
 const getAppMetaData = async (uid) => {
-
     const auth0_management_token = await getAuth0ManagementToken();
-    // Get current user data
     const getUserProfileRequstOptions = {
         method: 'GET',
         url: auth0ApiUrl + `/users/${uid}`,
@@ -85,9 +77,7 @@ const getAppMetaData = async (uid) => {
 }
 
 const getUserMetaData = async (uid) => {
-
     const auth0_management_token = await getAuth0ManagementToken();
-
     const getUserProfileRequstOptions = {
         method: 'GET',
         url: auth0ApiUrl + `/users/${uid}`,

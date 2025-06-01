@@ -1,20 +1,14 @@
 const { MongoClient } = require("mongodb");
-// Replace the uri string with your connection string.
+const _ = require('lodash');
 const uri = process.env.MONGO_URI;
 const client = new MongoClient(uri);
 const spotifyClientId = '2d496310f6db494791df2b41b9c2342d'
-
-const _ = require('lodash');
-const axios = require('axios')
-const spotify = require('../spotify/spotify.service');
-
 const stravaClientId = '75032'
-
+const axios = require('axios')
 const moment = require('moment');
 
 
 const connectSpotifyService = async (auth0_uid, auth_token) => {
-
     // exchange spotify authorization token for an access + refresh token
     const reqConfig = {
         method: "POST",
@@ -53,7 +47,6 @@ const connectSpotifyService = async (auth0_uid, auth_token) => {
 }
 
 const exchangeSpotifyRefreshToken = async (spotify_uid, refresh_token) => {
-
     // fetch spotify user access_token / refresh_token if expired
     const reqConfig = {
         method: "POST",
@@ -73,15 +66,10 @@ const exchangeSpotifyRefreshToken = async (spotify_uid, refresh_token) => {
     // exchange tokens
     const response = await axios(reqConfig)
 
-    // console.log(`Spotify Response: ${JSON.stringify(response.data)}`)
-
     const userUpdate = {
         spotify_refresh_token: _.get(response, 'data.refresh_token', refresh_token),
         spotify_access_token: _.get(response, 'data.access_token'),
     }
-
-    // console.log(`new access token: ${spotify_access_token}`)
-    // console.log(`new refresh token: ${spotify_refresh_token}`)
 
     // save spotify user profile to mongodb
     await updateUserDataByIdMongo("spotify", spotify_uid, userUpdate);
@@ -91,14 +79,9 @@ const exchangeSpotifyRefreshToken = async (spotify_uid, refresh_token) => {
 }
 
 const sendSpotifyApiRequest = async (uid, reqConfig, tokens) => {
-
     if (!tokens) {
         tokens = await getUserTokensByServiceId("spotify", uid)
     }
-
-    // console.log(`Sending Spotify API request to ${reqConfig.url}`)
-    // console.log(`Spotify access token: ${tokens.access_token}`)
-    // console.log(`Spotify refresh token: ${tokens.refresh_token}`)
 
     try {
         const response = await axios(reqConfig)
@@ -116,11 +99,9 @@ const sendSpotifyApiRequest = async (uid, reqConfig, tokens) => {
             throw error
         }
     }
-
 }
 
 const fetchSpotifyTracks = async (uid, tokens, start_time, end_time) => {
-
     const reqConfig = {
         method: "GET",
         url: "https://api.spotify.com/v1/me/player/recently-played",
@@ -136,9 +117,7 @@ const fetchSpotifyTracks = async (uid, tokens, start_time, end_time) => {
     }
 
     const response = await sendSpotifyApiRequest(uid, reqConfig, tokens)
-
     const tracksInRange = _.get(response, 'data.items', [])
-
     const filteredTracks = tracksInRange.filter(item => {
         const playedAtInMillis = new Date(item.played_at).getTime()
         return playedAtInMillis <= end_time
@@ -165,7 +144,6 @@ const fetchSpotifyTracks = async (uid, tokens, start_time, end_time) => {
 }
 
 const getSpotifyUserDetails = async (uid, tokens) => {
-
     if (!tokens) {
         tokens = await getUserTokensByServiceId("spotify", uid)
     }
@@ -185,7 +163,6 @@ const getSpotifyUserDetails = async (uid, tokens) => {
 
 
 const getUserStravaTokens = async (auth0_uid) => {
-
     try {
         await client.connect();
         const database = client.db('production');
@@ -203,14 +180,11 @@ const getUserStravaTokens = async (auth0_uid) => {
     catch (err) {
         console.log(err.stack);
     }
-
 }
 
 // Fetch spotify access and refresh token from user object in mongo
 const getUserSpotifyTokens = async (auth0_uid) => {
-
     try {
-
         await client.connect();
         const database = client.db('production');
         const users = database.collection('users');
@@ -227,12 +201,10 @@ const getUserSpotifyTokens = async (auth0_uid) => {
     } catch (err) {
         console.log(err.stack);
     }
-
 }
 
 // Store Strava Activities in MongoDb
 const storeActivityInMongoDB = async (auth0_uid, activity) => {
-
     try {
         await client.connect();
         const database = client.db('production');
@@ -251,7 +223,6 @@ const storeActivityInMongoDB = async (auth0_uid, activity) => {
 
 // Store tracklist in mongodb
 const storeTracklistInMongoDB = async (auth0_uid, spotify_tracklist, strava_activity_id) => {
-
     try {
 
         await client.connect();
@@ -268,12 +239,10 @@ const storeTracklistInMongoDB = async (auth0_uid, spotify_tracklist, strava_acti
     } catch (err) {
         console.log(err.stack);
     }
-
 }
 
 // Fetch tracklist from MongoDb
 const fetchTracklist = async (auth0_uid, strava_activity_id) => {
-
     try {
 
         await client.connect();
@@ -292,7 +261,6 @@ const fetchTracklist = async (auth0_uid, strava_activity_id) => {
 
 // Fetch Strava Activities from MongoDb 
 const fetchStravaActivities = async (auth0_uid) => {
-
     try {
 
         await client.connect();
@@ -306,13 +274,10 @@ const fetchStravaActivities = async (auth0_uid) => {
     } catch (err) {
         console.log(err.stack);
     }
-
-
 }
 
 // Update user access and refresh tokens
 const updateUserTokens = async (auth0_uid, service_name, access_token, refresh_token) => {
-
     try {
         await client.connect();
         const database = client.db('production');
@@ -324,12 +289,10 @@ const updateUserTokens = async (auth0_uid, service_name, access_token, refresh_t
     } catch (err) {
         console.log(err.stack);
     }
-
 }
 
 // update user data in MongoDb
 const updateUserDataByIdMongo = async (key, value, data) => {
-
     try {
         await client.connect();
         const database = client.db('production');
@@ -342,13 +305,10 @@ const updateUserDataByIdMongo = async (key, value, data) => {
     } catch (err) {
         console.log(err.stack);
     }
-
 }
 
 
 const deleteUserConnectionData = async (auth0_uid, service) => {
-
-
     // set fields to delete
     const deleteFields = {};
 
@@ -358,12 +318,10 @@ const deleteUserConnectionData = async (auth0_uid, service) => {
     deleteFields[service + '_uid'] = "";
 
     await deleteUserDataByIdMongo("auth0", auth0_uid, deleteFields);
-
 }
 
 // get most recent strava activity for user
 const getLastStravaActivity = async (auth0_uid) => {
-
     try {
         await client.connect();
         const database = client.db('production');
@@ -379,9 +337,7 @@ const getLastStravaActivity = async (auth0_uid) => {
 }
 
 const getUserConfigForClient = async (auth0_uid) => {
-
     const userProfile = await getUserDataByIdMongo("auth0", auth0_uid);
-
     const userConfig = {}
 
     if (_.get(userProfile, "strava_access_token")) {
@@ -402,7 +358,6 @@ const getUserConfigForClient = async (auth0_uid) => {
 
 // fetch user object from mongodb use key and value pair
 const getUserDataByIdMongo = async (key, value) => {
-
     try {
         await client.connect();
         const database = client.db('production');
@@ -416,12 +371,10 @@ const getUserDataByIdMongo = async (key, value) => {
     } catch (err) {
         console.log(err.stack);
     }
-
 }
 
 // set user data object in mongodb
 const setUserDataByIdMongo = async (key, value, data) => {
-
     try {
         await client.connect();
         const database = client.db('production');
@@ -434,12 +387,10 @@ const setUserDataByIdMongo = async (key, value, data) => {
     catch (err) {
         console.log(err.stack);
     }
-
 }
 
 // delete fields from user object in mongodb
 const deleteUserDataByIdMongo = async (key, value, fields) => {
-
     try {
         await client.connect();
         const database = client.db('production');
@@ -455,7 +406,6 @@ const deleteUserDataByIdMongo = async (key, value, fields) => {
 
 // get user access tokens and refresh tokens for a service using key and value args
 const getUserTokensByServiceId = async (key, value) => {
-
     try {
         await client.connect();
         const database = client.db('production');
@@ -475,14 +425,11 @@ const getUserTokensByServiceId = async (key, value) => {
     } catch (err) {
         console.log(err.stack);
     }
-
 }
 
 
 async function getStravaUserProfile(strava_id) {
-
     const stravaTokens = await getUserTokensByServiceId("strava", strava_id)
-
     const reqConfig = {
         method: "GET",
         url: "https://www.strava.com/api/v3/athlete",
@@ -492,13 +439,11 @@ async function getStravaUserProfile(strava_id) {
         }
     }
 
-
     const stravaResponse = await sendStravaApiRequest(strava_id, reqConfig, stravaTokens)
     return stravaResponse.data;
 }
 
 const exchangeStravaAuthToken = async (uid, auth_token) => {
-
     // fetch strava user access_token / refresh_token
     const reqConfig = {
         method: "POST",
@@ -523,11 +468,9 @@ const exchangeStravaAuthToken = async (uid, auth_token) => {
 
     // update user data in mongo
     await updateUserDataByIdMongo("auth0", uid, userUpdate)
-
 }
 
 const getStravaWebhookDetails = async () => {
-
     const reqConfig = {
         method: "GET",
         url: "https://www.strava.com/api/v3/push_subscriptions",
@@ -543,13 +486,10 @@ const getStravaWebhookDetails = async () => {
 
     const response = await axios(reqConfig)
     return response.data
-
 }
 
 const deleteStravaWebhook = async () => {
-
     const details = await getStravaWebhookDetails();
-
     for (let subscription of details) {
 
         const reqConfig = {
@@ -572,7 +512,6 @@ const deleteStravaWebhook = async () => {
 }
 
 const fetchStravaActivityDetails = async (uid, stravaTokens, activity_id) => {
-
     const reqConfig = {
         method: "GET",
         url: `https://www.strava.com/api/v3/activities/${activity_id}`,
@@ -587,11 +526,9 @@ const fetchStravaActivityDetails = async (uid, stravaTokens, activity_id) => {
 
     const response = await sendStravaApiRequest(uid, reqConfig, stravaTokens)
     return response.data
-
 }
 
 const sendStravaApiRequest = async (strava_uid, reqConfig, tokens) => {
-
     if (!tokens) {
         tokens = await getUserTokensByServiceId("strava", strava_uid)
     }
@@ -635,7 +572,6 @@ const getStravaActivityTracklist = async (activity_id) => {
 }
 
 const minifyStravaActivity = async (activity) => {
-
     try {
         // Get local start date time object from strava activity
         const local_start_datetime = activity.start_date_local;
@@ -679,11 +615,9 @@ const minifyStravaActivity = async (activity) => {
         console.log(`error minifying strava activity: ${error}`)
         return null
     }
-
 }
 
 const processStravaActivityCreated = async (strava_uid, activity_id) => {
-
     // fetch user data
     const userData = await getUserDataByIdMongo("strava", strava_uid)
 
@@ -755,12 +689,10 @@ const processStravaActivityCreated = async (strava_uid, activity_id) => {
             console.log(`Update: athlete: ${strava_uid}, activity ${activity_id}, ${trackList.length} tracks }`)
 
         }, 5000);
-
     }
 }
 
 const exchangeStravaRefreshToken = async (strava_uid, refresh_token) => {
-
     const reqConfig = {
         method: "POST",
         url: "https://www.strava.com/oauth/token",
@@ -793,7 +725,6 @@ const exchangeStravaRefreshToken = async (strava_uid, refresh_token) => {
 }
 
 const updateStravaActivity = async (user_id, activity_id, update_body) => {
-
     const stravaTokens = await getUserTokensByServiceId("strava", user_id)
 
     // update activity with spotify playlist
@@ -816,7 +747,6 @@ const updateStravaActivity = async (user_id, activity_id, update_body) => {
 
 // subscribe to strava new activity webhook
 const createStravaWebhook = async () => {
-
     const reqConfig = {
         method: "POST",
         url: "https://www.strava.com/api/v3/push_subscriptions",
@@ -833,13 +763,10 @@ const createStravaWebhook = async () => {
     }
 
     const response = await axios(reqConfig)
-
 }
 
 const getLastStravaActivityStrava = async (strava_uid) => {
-
     const stravaTokens = await getUserTokensByServiceId("strava", strava_uid)
-    
     const reqConfig = {
         method: "GET",
         url: "https://www.strava.com/api/v3/athlete/activities",
@@ -851,10 +778,8 @@ const getLastStravaActivityStrava = async (strava_uid) => {
 
     const response = await sendStravaApiRequest(strava_uid, reqConfig, stravaTokens)
     return _.get(response, 'data[0]', null)
-
 }
 const reprocessLastStravaActivity = async (strava_uid) => {
-
     // get last strava activity from strava api for user
     const lastStravaActivity = await getLastStravaActivityStrava(strava_uid);
 
