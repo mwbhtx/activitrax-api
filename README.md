@@ -1,5 +1,5 @@
 ### 🚴‍♂️ activitrax-api
-[https://activitrax.io](https://activitrax.io)
+[https://activitrax.app](https://activitrax.app)
 
 ---
 
