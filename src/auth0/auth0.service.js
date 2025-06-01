@@ -2,7 +2,7 @@ const axios = require('axios');
 
 const auth0ApiUrl = 'https://dev-lpah3aos.us.auth0.com/api/v2';
 const auth0TokenExchangeUrl = 'https://dev-lpah3aos.us.auth0.com/oauth/token'
-const m2mClientId = process.env.ACTIVITRAX_M2M_CLIENT_ID;
+const m2mClientId = process.env.AUTH0_M2M_CLIENT_ID;
 
 const _ = require('lodash');
 
@@ -15,7 +15,7 @@ const getAuth0ManagementToken = async () => {
         data: new URLSearchParams({
             grant_type: 'client_credentials',
             client_id: m2mClientId,
-            client_secret: process.env.ACTIVITRAX_M2M_CLIENT_SECRET,
+            client_secret: process.env.AUTH0_M2M_CLIENT_SECRET,
             audience: 'https://dev-lpah3aos.us.auth0.com/api/v2/'
         })
     };

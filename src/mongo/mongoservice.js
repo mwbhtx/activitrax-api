@@ -1,6 +1,6 @@
 const { MongoClient } = require("mongodb");
 // Replace the uri string with your connection string.
-const uri = process.env.ACTIVITRAX_MONGO_URI;
+const uri = process.env.MONGO_URI;
 const client = new MongoClient(uri);
 const spotifyClientId = '2d496310f6db494791df2b41b9c2342d'
 
@@ -21,12 +21,12 @@ const connectSpotifyService = async (auth0_uid, auth_token) => {
         url: 'https://accounts.spotify.com/api/token',
         headers: {
             "Content-Type": "application/x-www-form-urlencoded",
-            "Authorization": "Basic " + (Buffer.from(spotifyClientId + ":" + process.env.ACTIVITRAX_SPOTIFY_CLIENT_SECRET).toString("base64"))
+            "Authorization": "Basic " + (Buffer.from(spotifyClientId + ":" + process.env.SPOTIFY_CLIENT_SECRET).toString("base64"))
         },
         params: {
             code: auth_token,
             grant_type: "authorization_code",
-            redirect_uri: process.env.ACTIVITRAX_SPOTIFY_REDIRECT_URI
+            redirect_uri: process.env.SPOTIFY_REDIRECT_URI
         }
     }
 
@@ -65,7 +65,7 @@ const exchangeSpotifyRefreshToken = async (spotify_uid, refresh_token) => {
             grant_type: "refresh_token",
             refresh_token: refresh_token,
             client_id: spotifyClientId,
-            client_secret: process.env.ACTIVITRAX_SPOTIFY_CLIENT_SECRET,
+            client_secret: process.env.SPOTIFY_CLIENT_SECRET,
         }
 
     }
@@ -505,7 +505,7 @@ const exchangeStravaAuthToken = async (uid, auth_token) => {
         url: "https://www.strava.com/oauth/token",
         params: {
             client_id: stravaClientId,
-            client_secret: process.env.ACTIVITRAX_STRAVA_CLIENT_SECRET,
+            client_secret: process.env.STRAVA_CLIENT_SECRET,
             code: auth_token,
             grant_type: "authorization_code"
         }
@@ -536,7 +536,7 @@ const getStravaWebhookDetails = async () => {
         },
         params: {
             client_id: stravaClientId,
-            client_secret: process.env.ACTIVITRAX_STRAVA_CLIENT_SECRET,
+            client_secret: process.env.STRAVA_CLIENT_SECRET,
         }
 
     }
@@ -560,7 +560,7 @@ const deleteStravaWebhook = async () => {
             },
             params: {
                 client_id: stravaClientId,
-                client_secret: process.env.ACTIVITRAX_STRAVA_CLIENT_SECRET,
+                client_secret: process.env.STRAVA_CLIENT_SECRET,
                 id: subscription.id
             }
 
@@ -766,7 +766,7 @@ const exchangeStravaRefreshToken = async (strava_uid, refresh_token) => {
         url: "https://www.strava.com/oauth/token",
         params: {
             client_id: stravaClientId,
-            client_secret: process.env.ACTIVITRAX_STRAVA_CLIENT_SECRET,
+            client_secret: process.env.STRAVA_CLIENT_SECRET,
             refresh_token: refresh_token,
             grant_type: "refresh_token"
         }
@@ -825,9 +825,9 @@ const createStravaWebhook = async () => {
         },
         params: {
             client_id: stravaClientId,
-            client_secret: process.env.ACTIVITRAX_STRAVA_CLIENT_SECRET,
-            callback_url: process.env.ACTIVITRAX_STRAVA_CALLBACK_URL,
-            verify_token: process.env.ACTIVITRAX_STRAVA_WEBOHOOK_VERIFY_TOKEN
+            client_secret: process.env.STRAVA_CLIENT_SECRET,
+            callback_url: process.env.STRAVA_CALLBACK_URL,
+            verify_token: process.env.STRAVA_WEBOHOOK_VERIFY_TOKEN
         }
 
     }

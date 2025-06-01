@@ -39,8 +39,8 @@ messagesRouter.get("/user", validateAccessToken, (req, res) => {
     headers: { 'content-type': 'application/x-www-form-urlencoded' },
     data: new URLSearchParams({
       grant_type: 'client_credentials',
-      client_id: process.env.ACTIVITRAX_M2M_CLIENT_ID,
-      client_secret: process.env.ACTIVITRAX_M2M_CLIENT_SECRET,
+      client_id: process.env.AUTH0_M2M_CLIENT_ID,
+      client_secret: process.env.AUTH0_M2M_CLIENT_SECRET,
       audience: 'https://dev-lpah3aos.us.auth0.com/api/v2/'
     })
   };
