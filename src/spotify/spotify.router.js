@@ -1,11 +1,7 @@
 const express = require("express");
-
 const { validateAccessToken } = require("../middleware/auth0.middleware.js");
-
 const mongo = require("../mongo/mongoservice.js");
-
 const spotifyRouter = express.Router();
-
 const _ = require('lodash');
 
 spotifyRouter.get('/user_profile', validateAccessToken, async (req, res) => {
@@ -19,11 +15,9 @@ spotifyRouter.get('/user_profile', validateAccessToken, async (req, res) => {
         console.log(JSON.stringify(error_message) || error);
         res.status(500).json({ message: 'server error' });
     }
-
 })
 
 spotifyRouter.post("/exchange_token", validateAccessToken, async (req, res) => {
-
     try {
         const auth_token = req.body.auth_token;
         const user_id = req.auth.payload.sub;
@@ -34,7 +28,6 @@ spotifyRouter.post("/exchange_token", validateAccessToken, async (req, res) => {
         console.log(JSON.stringify(error_message) || error);
         res.status(500).json({ message: 'server error' });
     }
-
 });
 
 module.exports = { spotifyRouter };
