@@ -72,7 +72,7 @@ stravaRouter.get('/webhook_callback', async (req, res) => {
     try {
         const hub_challenge = req.query['hub.challenge'];
         const hub_verify_token = req.query['hub.verify_token'];
-        if (hub_verify_token === process.env.ACTIVITRAX_STRAVA_WEBOHOOK_VERIFY_TOKEN) {
+        if (hub_verify_token === process.env.STRAVA_WEBOHOOK_VERIFY_TOKEN) {
             res.status(200).json({ "hub.challenge": hub_challenge });
         } else {
             res.status(401).json({ message: 'unauthorized' });
