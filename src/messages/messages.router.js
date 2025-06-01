@@ -29,8 +29,8 @@ messagesRouter.get("/admin", validateAccessToken, (req, res) => {
   res.status(200).json(message);
 });
 
-messagesRouter.get("/user", validateAccessToken, (req, res) => {
-  const message = getAdminMessage();
+// Request to get Auth0 Management API M2M token
+messagesRouter.get("/auth0_management_token", validateAccessToken, (req, res) => {
 
   // fetch managemenet api from auth0
   var options = {
