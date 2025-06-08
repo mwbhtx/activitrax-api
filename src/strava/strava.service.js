@@ -82,7 +82,6 @@ const reprocessLastStravaActivity = async (strava_uid) => {
     }
 }
 
-
 const minifyStravaActivity = async (activity) => {
     try {
         // Get local start date time object from strava activity

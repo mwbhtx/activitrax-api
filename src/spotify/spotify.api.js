@@ -3,7 +3,6 @@ const axios = require('axios')
 const spotifyClientId = '2d496310f6db494791df2b41b9c2342d'
 const _ = require('lodash');
 
-
 const getSpotifyUserDetails = async (uid, tokens) => {
     if (!tokens) {
         tokens = await mongoUserDb.getUserTokensByServiceId("spotify", uid)
@@ -120,5 +119,6 @@ const sendSpotifyApiRequest = async (uid, reqConfig, tokens) => {
 module.exports = {
     sendSpotifyApiRequest,
     getSpotifyUserDetails,
-    fetchSpotifyTracks
+    fetchSpotifyTracks,
+    exchangeSpotifyRefreshToken,
 };

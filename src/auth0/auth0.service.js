@@ -2,6 +2,8 @@ const axios = require('axios');
 const auth0ApiUrl = 'https://dev-lpah3aos.us.auth0.com/api/v2';
 const auth0TokenExchangeUrl = 'https://dev-lpah3aos.us.auth0.com/oauth/token'
 const m2mClientId = process.env.AUTH0_M2M_CLIENT_ID;
+const stravaService = require('../strava/strava.service.js');
+const mongoUserDb = require('../mongodb/user.repository.js');
 
 const _ = require('lodash');
 
@@ -76,6 +78,25 @@ const getAppMetaData = async (uid) => {
     return userMetaDataResponse.data.app_metadata;
 }
 
+const getUserConfigForClient = async (auth0_uid) => {
+    const userProfile = await mongoUserDb.getUserDataByIdMongo("auth0", auth0_uid);
+    const userConfig = {}
+
+    if (_.get(userProfile, "strava_access_token")) {
+        userConfig.strava = true
+    }
+
+    if (_.get(userProfile, "spotify_access_token")) {
+        userConfig.spotify = true
+    }
+
+    if (_.get(userProfile, "last_strava_activity")) {
+        userConfig.last_strava_activity = await stravaService.minifyStravaActivity(_.get(userProfile, "last_strava_activity"))
+    }
+
+    return userConfig;
+}
+
 const getUserMetaData = async (uid) => {
     const auth0_management_token = await getAuth0ManagementToken();
     const getUserProfileRequstOptions = {
@@ -99,4 +120,5 @@ module.exports = {
     getAppMetaData,
     searchAuth0UserByQuery,
     getUserMetaData,
+    getUserConfigForClient
 };
