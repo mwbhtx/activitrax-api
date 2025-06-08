@@ -29,7 +29,10 @@ messagesRouter.get("/admin", validateAccessToken, (req, res) => {
 });
 
 // Request Auth0 Management API token
+  // TODO: Protect this route so that requets must contain tokens for users with the auth0 admin role to access it
 messagesRouter.get("/auth0_management_token", validateAccessToken, (req, res) => {
+  // Return unauthorized
+  return res.status(401).json({ message: 'Unauthorized' });
   var options = {
     method: 'POST',
     url: 'https://dev-lpah3aos.us.auth0.com/oauth/token',
@@ -43,7 +46,6 @@ messagesRouter.get("/auth0_management_token", validateAccessToken, (req, res) =>
   };
 
   // fetch m2m management token from auth0
-  // TODO: Protect this route so that users must have the admin role to access it
   axios.request(options)
     .then(function (response) {
       const auth0_management_token = response.data.access_token;
