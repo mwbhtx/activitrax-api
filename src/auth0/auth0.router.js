@@ -2,7 +2,7 @@ const express = require("express");
 const { validateAccessToken } = require("../middleware/auth0.middleware.js");
 const auth0Router = express.Router();
 const _ = require('lodash');
-const mongo = require("../mongo/mongoservice.js");
+const mongo = require("../mongodb/mongodb.service.js");
 
 auth0Router.get("/user_config", validateAccessToken, async (req, res) => {
     try {
