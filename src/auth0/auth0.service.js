@@ -4,7 +4,6 @@ const auth0TokenExchangeUrl = 'https://dev-lpah3aos.us.auth0.com/oauth/token'
 const m2mClientId = process.env.AUTH0_M2M_CLIENT_ID;
 const stravaService = require('../strava/strava.service.js');
 const mongoUserDb = require('../mongodb/user.repository.js');
-
 const _ = require('lodash');
 
 const getAuth0ManagementToken = async () => {
