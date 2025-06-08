@@ -4,6 +4,7 @@ const spotifyApi = require("../spotify/spotify.api.js");
 const mongoTracklistDb = require("../mongodb/tracklist.repository.js");
 const mongoActivityDb = require("../mongodb/activity.repository.js");
 const moment = require('moment');
+const _ = require('lodash');
 
 const processStravaActivityCreated = async (strava_uid, activity_id) => {
     // fetch user data
@@ -99,7 +100,7 @@ const minifyStravaActivity = async (activity) => {
         const distance_miles_rounded = distance_miles.toFixed(2);
 
         // fetch tracklist for this activity
-        const trackListDetails = await getStravaActivityTracklist(activity.id)
+        const trackListDetails = await mongoTracklistDb.getStravaActivityTracklist(activity.id)
 
         const trackList = trackListDetails.tracklist
 
