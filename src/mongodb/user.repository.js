@@ -1,7 +1,6 @@
 const mongoClient = require('./mongodb.service.js');
 const _ = require('lodash');
 const usersDb = mongoClient.db().collection('users');
-const stravaService = require('../strava/strava.service.js');
 
 // get user access tokens and refresh tokens for a service using key and value args
 const getUserTokensByServiceId = async (key, value) => {
@@ -123,27 +122,7 @@ const getUserStravaTokens = async (auth0_uid) => {
     }
 }
 
-const getUserConfigForClient = async (auth0_uid) => {
-    const userProfile = await getUserDataByIdMongo("auth0", auth0_uid);
-    const userConfig = {}
-
-    if (_.get(userProfile, "strava_access_token")) {
-        userConfig.strava = true
-    }
-
-    if (_.get(userProfile, "spotify_access_token")) {
-        userConfig.spotify = true
-    }
-
-    if (_.get(userProfile, "last_strava_activity")) {
-        userConfig.last_strava_activity = await stravaService.minifyStravaActivity(_.get(userProfile, "last_strava_activity"))
-    }
-
-    return userConfig;
-}
-
 module.exports = {
-    getUserConfigForClient,
     getUserSpotifyTokens,
     getUserStravaTokens,
     getUserTokensByServiceId,

@@ -8,6 +8,7 @@ const spotifyService = require("./spotify.service.js");
 spotifyRouter.get('/user_profile', validateAccessToken, async (req, res) => {
     try {
         const spotify_uid = req.query.user_id
+        console.log(`Fetching Spotify user profile for user_id: ${spotify_uid}`);
         const user_profile = await spotifyApi.getSpotifyUserDetails(spotify_uid);
         res.status(200).json(user_profile);
     }
