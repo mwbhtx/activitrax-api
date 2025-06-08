@@ -69,7 +69,6 @@ const processStravaActivityCreated = async (strava_uid, activity_id) => {
             }
 
             await stravaApi.updateStravaActivity(strava_uid, activity_id, newActivityDescription);
-            console.log(`Update: athlete: ${strava_uid}, activity ${activity_id}, ${trackList.length} tracks }`)
         }, 5000);
     }
 }
