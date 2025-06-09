@@ -6,7 +6,7 @@ const {
   getProtectedMessage,
   getPublicMessage,
 } = require("./messages.service");
-const { validateAccessToken } = require("../middleware/auth0.middleware.js");
+const { validateAccessToken } = require("../middleware/auth0.middleware");
 
 const messagesRouter = express.Router();
 

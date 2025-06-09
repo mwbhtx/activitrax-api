@@ -1,10 +1,10 @@
-const mongoUserDb = require("../mongodb/user.repository.js");
+const mongoUserDb = require("../mongodb/user.repository");
 const axios = require("axios");
 const stravaClientId = '75032'
 const _ = require('lodash');
 
-async function getStravaUserProfile(strava_id) {
-    const stravaTokens = await mongoUserDb.getUserTokensByServiceId("strava", strava_id)
+async function getUser(strava_id) {
+    const stravaTokens = await mongoUserDb.getUserTokensByService("strava", strava_id)
     const reqConfig = {
         method: "GET",
         url: "https://www.strava.com/api/v3/athlete",
@@ -14,13 +14,13 @@ async function getStravaUserProfile(strava_id) {
         }
     }
 
-    const stravaResponse = await sendStravaApiRequest(strava_id, reqConfig, stravaTokens)
+    const stravaResponse = await sendApiRequest(strava_id, reqConfig, stravaTokens)
     return stravaResponse.data;
 }
 
-const sendStravaApiRequest = async (strava_uid, reqConfig, tokens) => {
+const sendApiRequest = async (strava_uid, reqConfig, tokens) => {
     if (!tokens) {
-        tokens = await mongoUserDb.getUserTokensByServiceId("strava", strava_uid)
+        tokens = await mongoUserDb.getUserTokensByService("strava", strava_uid)
     }
 
     try {
@@ -30,7 +30,7 @@ const sendStravaApiRequest = async (strava_uid, reqConfig, tokens) => {
     catch (error) {
         // if access token expired, try to exchange refresh token
         if (error.response.status === 401) {
-            const newTokens = await exchangeStravaRefreshToken(strava_uid, tokens.refresh_token)
+            const newTokens = await exchangeRefreshToken(strava_uid, tokens.refresh_token)
             reqConfig.headers["authorization"] = "Bearer " + newTokens.access_token
             const response = await axios(reqConfig)
             return response
@@ -41,8 +41,8 @@ const sendStravaApiRequest = async (strava_uid, reqConfig, tokens) => {
     }
 }
 
-const getLastStravaActivityStrava = async (strava_uid) => {
-    const stravaTokens = await mongoUserDb.getUserTokensByServiceId("strava", strava_uid)
+const getLastActivity = async (strava_uid) => {
+    const stravaTokens = await mongoUserDb.getUserTokensByService("strava", strava_uid)
     const reqConfig = {
         method: "GET",
         url: "https://www.strava.com/api/v3/athlete/activities",
@@ -52,12 +52,12 @@ const getLastStravaActivityStrava = async (strava_uid) => {
         }
     }
 
-    const response = await sendStravaApiRequest(strava_uid, reqConfig, stravaTokens)
+    const response = await sendApiRequest(strava_uid, reqConfig, stravaTokens)
     return _.get(response, 'data[0]', null)
 }
 
-const updateStravaActivity = async (user_id, activity_id, update_body) => {
-    const stravaTokens = await mongoUserDb.getUserTokensByServiceId("strava", user_id)
+const saveActivity = async (user_id, activity_id, update_body) => {
+    const stravaTokens = await mongoUserDb.getUserTokensByService("strava", user_id)
 
     const reqConfig = {
         method: "PUT",
@@ -72,7 +72,7 @@ const updateStravaActivity = async (user_id, activity_id, update_body) => {
 
     }
 
-    const response = await sendStravaApiRequest(user_id, reqConfig, stravaTokens)
+    const response = await sendApiRequest(user_id, reqConfig, stravaTokens)
     return response.data
 }
 
@@ -90,13 +90,11 @@ const createStravaWebhook = async () => {
             callback_url: process.env.STRAVA_CALLBACK_URL,
             verify_token: process.env.STRAVA_WEBOHOOK_VERIFY_TOKEN
         }
-
     }
-
-    const response = await axios(reqConfig)
+    await axios(reqConfig)
 }
 
-const exchangeStravaAuthToken = async (uid, auth_token) => {
+const exchangeAuthToken = async (uid, auth_token) => {
     // fetch strava user access_token / refresh_token
     const reqConfig = {
         method: "POST",
@@ -120,11 +118,11 @@ const exchangeStravaAuthToken = async (uid, auth_token) => {
     }
 
     // update user data in mongo
-    await mongoUserDb.updateUserDataByIdMongo("auth0", uid, userUpdate)
+    await mongoUserDb.saveUser("auth0", uid, userUpdate)
 }
 
-const deleteStravaWebhook = async () => {
-    const details = await getStravaWebhookDetails();
+const deleteWebhook = async () => {
+    const details = await getWebhook();
     for (let subscription of details) {
 
         const reqConfig = {
@@ -140,12 +138,11 @@ const deleteStravaWebhook = async () => {
             }
 
         }
-
-        const response = await axios(reqConfig)
+        await axios(reqConfig)
     }
 }
 
-const getStravaWebhookDetails = async () => {
+const getWebhook = async () => {
     const reqConfig = {
         method: "GET",
         url: "https://www.strava.com/api/v3/push_subscriptions",
@@ -163,7 +160,25 @@ const getStravaWebhookDetails = async () => {
     return response.data
 }
 
-const fetchStravaActivityDetails = async (uid, stravaTokens, activity_id) => {
+const getActivities = async (uid, stravaTokens, page = 1, per_page = 30) => {
+    const reqConfig = {
+        method: "GET",
+        url: "https://www.strava.com/api/v3/athlete/activities",
+        headers: {
+            "Content-Type": "application/json",
+            "authorization": `Bearer ${stravaTokens.access_token}`
+        },
+        params: {
+            page: page,
+            per_page: per_page
+        }
+    }
+
+    const response = await sendApiRequest(uid, reqConfig, stravaTokens)
+    return response.data
+}
+
+const getActivity = async (uid, stravaTokens, activity_id) => {
     const reqConfig = {
         method: "GET",
         url: `https://www.strava.com/api/v3/activities/${activity_id}`,
@@ -175,11 +190,11 @@ const fetchStravaActivityDetails = async (uid, stravaTokens, activity_id) => {
         }
     }
 
-    const response = await sendStravaApiRequest(uid, reqConfig, stravaTokens)
+    const response = await sendApiRequest(uid, reqConfig, stravaTokens)
     return response.data
 }
 
-const exchangeStravaRefreshToken = async (strava_uid, refresh_token) => {
+const exchangeRefreshToken = async (strava_uid, refresh_token) => {
     const reqConfig = {
         method: "POST",
         url: "https://www.strava.com/oauth/token",
@@ -205,19 +220,20 @@ const exchangeStravaRefreshToken = async (strava_uid, refresh_token) => {
         strava_refresh_token: new_tokens.refresh_token
     }
 
-    await mongoUserDb.updateUserDataByIdMongo("strava", strava_uid, userUpdate)
+    await mongoUserDb.saveUser("strava", strava_uid, userUpdate)
 
     // return new access token
     return new_tokens
 }
 
 module.exports = {
-    getStravaUserProfile,
-    fetchStravaActivityDetails,
-    updateStravaActivity,
-    getStravaWebhookDetails,
+    getUser,
+    getActivity,
+    saveActivity,
+    getWebhook,
     createStravaWebhook,
-    deleteStravaWebhook,
-    exchangeStravaAuthToken,
-    getLastStravaActivityStrava
+    deleteWebhook,
+    exchangeAuthToken,
+    getLastActivity,
+    getActivities
 };

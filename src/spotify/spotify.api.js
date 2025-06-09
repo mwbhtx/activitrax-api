@@ -1,11 +1,11 @@
-const mongoUserDb = require("../mongodb/user.repository.js");
+const mongoUserDb = require("../mongodb/user.repository");
 const axios = require('axios')
 const spotifyClientId = '2d496310f6db494791df2b41b9c2342d'
 const _ = require('lodash');
 
-const getSpotifyUserDetails = async (uid, tokens) => {
+const getUser = async (uid, tokens) => {
     if (!tokens) {
-        tokens = await mongoUserDb.getUserTokensByServiceId("spotify", uid)
+        tokens = await mongoUserDb.getUserTokensByService("spotify", uid)
     }
 
     const reqConfig = {
@@ -17,11 +17,11 @@ const getSpotifyUserDetails = async (uid, tokens) => {
         }
     }
 
-    const response = await sendSpotifyApiRequest(uid, reqConfig, tokens)
+    const response = await sendApiRequest(uid, reqConfig, tokens)
     return response.data
 }
 
-const exchangeSpotifyRefreshToken = async (spotify_uid, refresh_token) => {
+const exchangeRefreshToken = async (spotify_uid, refresh_token) => {
     // fetch spotify user access_token / refresh_token if expired
     const reqConfig = {
         method: "POST",
@@ -46,13 +46,13 @@ const exchangeSpotifyRefreshToken = async (spotify_uid, refresh_token) => {
     }
 
     // save spotify user profile to mongodb
-    await mongoUserDb.updateUserDataByIdMongo("spotify", spotify_uid, userUpdate);
+    await mongoUserDb.saveUser("spotify", spotify_uid, userUpdate);
 
     // return new access token
     return { access_token: userUpdate.spotify_access_token, refresh_token: userUpdate.spotify_refresh_token }
 }
 
-const fetchSpotifyTracks = async (uid, tokens, start_time, end_time) => {
+const getTracklist = async (uid, tokens, start_time, end_time) => {
     const reqConfig = {
         method: "GET",
         url: "https://api.spotify.com/v1/me/player/recently-played",
@@ -61,17 +61,17 @@ const fetchSpotifyTracks = async (uid, tokens, start_time, end_time) => {
             "authorization": "Bearer " + tokens.access_token
         },
         params: {
-            limit: 25,
-            after: start_time,
-
+            limit: 50,
+            after: start_time ? start_time : null,
         }
     }
 
-    const response = await sendSpotifyApiRequest(uid, reqConfig, tokens)
+    const response = await sendApiRequest(uid, reqConfig, tokens)
     const tracksInRange = _.get(response, 'data.items', [])
     const filteredTracks = tracksInRange.filter(item => {
         const playedAtInMillis = new Date(item.played_at).getTime()
-        return playedAtInMillis <= end_time
+        if (end_time) return playedAtInMillis <= end_time
+        return true
     })
 
     const tracks = filteredTracks.map(item => {
@@ -94,9 +94,9 @@ const fetchSpotifyTracks = async (uid, tokens, start_time, end_time) => {
     return tracks
 }
 
-const sendSpotifyApiRequest = async (uid, reqConfig, tokens) => {
+const sendApiRequest = async (uid, reqConfig, tokens) => {
     if (!tokens) {
-        tokens = await mongoUserDb.getUserTokensByServiceId("spotify", uid)
+        tokens = await mongoUserDb.getUserTokensByService("spotify", uid)
     }
 
     try {
@@ -105,7 +105,7 @@ const sendSpotifyApiRequest = async (uid, reqConfig, tokens) => {
     }
     catch (error) {
         if (error.response.status === 401) {
-            const newTokens = await exchangeSpotifyRefreshToken(uid, tokens.refresh_token)
+            const newTokens = await exchangeRefreshToken(uid, tokens.refresh_token)
             reqConfig.headers["authorization"] = "Bearer " + newTokens.access_token
             const response = await axios(reqConfig)
             return response
@@ -117,8 +117,8 @@ const sendSpotifyApiRequest = async (uid, reqConfig, tokens) => {
 }
 
 module.exports = {
-    sendSpotifyApiRequest,
-    getSpotifyUserDetails,
-    fetchSpotifyTracks,
-    exchangeSpotifyRefreshToken,
+    sendApiRequest,
+    getUser,
+    getTracklist,
+    exchangeRefreshToken,
 };

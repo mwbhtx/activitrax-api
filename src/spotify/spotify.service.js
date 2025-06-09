@@ -1,9 +1,9 @@
 const _ = require('lodash');
 const axios = require('axios');
-const spotifyApi = require("./spotify.api.js");
-const mongoUserDb = require("../mongodb/user.repository.js");
+const spotifyApi = require("./spotify.api");
+const mongoUserDb = require("../mongodb/user.repository");
 
-const connectSpotifyService = async (auth0_uid, auth_token) => {
+const exchangeAuthToken = async (auth0_uid, auth_token) => {
     // exchange spotify authorization token for an access + refresh token
     const reqConfig = {
         method: "POST",
@@ -29,7 +29,7 @@ const connectSpotifyService = async (auth0_uid, auth_token) => {
     }
 
     // fetch spotify user profile with tokens
-    const userProfile = await spotifyApi.getSpotifyUserDetails(auth0_uid, connectionData);
+    const userProfile = await spotifyApi.getUser(auth0_uid, connectionData);
 
     const userUpdate = {
         spotify_access_token: _.get(spotifyResponse, 'data.access_token'),
@@ -38,9 +38,9 @@ const connectSpotifyService = async (auth0_uid, auth_token) => {
     }
 
     // save spotify user profile to mongodb
-    await mongoUserDb.updateUserDataByIdMongo("auth0", auth0_uid, userUpdate);
+    await mongoUserDb.saveUser("auth0", auth0_uid, userUpdate);
 }
 
 module.exports = {
-    connectSpotifyService
+    exchangeAuthToken
 }

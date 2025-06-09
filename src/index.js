@@ -9,6 +9,7 @@ const { notFoundHandler } = require("./middleware/not-found.middleware");
 const { auth0Router } = require("./auth0/auth0.router");
 const { stravaRouter } = require("./strava/strava.router");
 const { spotifyRouter } = require("./spotify/spotify.router");
+const { appRouter } = require("./app/app.router");
 
 dotenv.config();
 
@@ -49,6 +50,7 @@ app.use(cors());
 
 app.use("/api/v1", apiRouter);
 
+apiRouter.use("/app", appRouter);
 apiRouter.use("/messages", messagesRouter);
 apiRouter.use("/auth0", auth0Router);
 apiRouter.use("/strava", stravaRouter);
