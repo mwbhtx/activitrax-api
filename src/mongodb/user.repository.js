@@ -3,7 +3,7 @@ const _ = require('lodash');
 const usersDb = mongoClient.db().collection('users');
 
 // get user access tokens and refresh tokens for a service using key and value args
-const getUserTokensByServiceId = async (key, value) => {
+const getUserTokensByService = async (key, value) => {
     try {
         // Fetch the user from the database
         const result = await usersDb.findOne({ [key + '_uid']: _.toString(value) });
@@ -22,7 +22,7 @@ const getUserTokensByServiceId = async (key, value) => {
 }
 
 // // update user data in MongoDb
-const updateUserDataByIdMongo = async (key, value, data) => {
+const saveUser = async (key, value, data) => {
     try {
         // Update the user in the database
         await usersDb.updateOne({ [key + '_uid']: _.toString(value) }, { $set: data }, { upsert: true });
@@ -33,7 +33,7 @@ const updateUserDataByIdMongo = async (key, value, data) => {
 }
 
 // delete fields from user object in mongodb
-const deleteUserDataByIdMongo = async (key, value, fields) => {
+const deleteUser = async (key, value, fields) => {
     try {
         // delete fields from the user in the database
         await usersDb.updateOne({ [key + '_uid']: _.toString(value) }, { $unset: fields }, { upsert: false });
@@ -43,7 +43,7 @@ const deleteUserDataByIdMongo = async (key, value, fields) => {
     }
 }
 
-const deleteUserConnectionData = async (auth0_uid, service) => {
+const deleteAppConnections = async (auth0_uid, service) => {
     // set fields to delete
     const deleteFields = {};
 
@@ -52,11 +52,11 @@ const deleteUserConnectionData = async (auth0_uid, service) => {
     deleteFields[service + '_refresh_token'] = "";
     deleteFields[service + '_uid'] = "";
 
-    await deleteUserDataByIdMongo("auth0", auth0_uid, deleteFields);
+    await deleteUser("auth0", auth0_uid, deleteFields);
 }
 
 // fetch user object from mongodb use key and value pair
-const getUserDataByIdMongo = async (key, value) => {
+const getUser = async (key, value) => {
     try {
         const result = await usersDb.findOne({ [key + '_uid']: _.toString(value) });
         return result;
@@ -65,22 +65,8 @@ const getUserDataByIdMongo = async (key, value) => {
     }
 }
 
-// set user data object in mongodb
-const setUserDataByIdMongo = async (key, value, data) => {
-    try {
-        // overwrite the user in the database
-        await usersDb.updateOne({ [key + '_uid']: _.toString(value) }, { $set: data }, { upsert: false });
-
-    }
-    catch (err) {
-        console.log(err.stack);
-    }
-}
-
-
-
 // Fetch spotify access and refresh token from user object in mongo
-const getUserSpotifyTokens = async (auth0_uid) => {
+const getSpotifyTokens = async (auth0_uid) => {
     try {
         // Fetch the user from the database
         const result = await usersDb.findOne({ auth0_uid: auth0_uid })
@@ -96,7 +82,7 @@ const getUserSpotifyTokens = async (auth0_uid) => {
 }
 
 // Update user access and refresh tokens
-const updateUserTokens = async (auth0_uid, service_name, access_token, refresh_token) => {
+const updateTokens = async (auth0_uid, service_name, access_token, refresh_token) => {
     try {
         // Update the user in the database
         await usersDb.updateOne({ auth0_uid: auth0_uid }, { $set: { [service_name + '_access_token']: access_token, [service_name + '_refresh_token']: refresh_token } }, { upsert: true });
@@ -106,7 +92,7 @@ const updateUserTokens = async (auth0_uid, service_name, access_token, refresh_t
     }
 }
 
-const getUserStravaTokens = async (auth0_uid) => {
+const getStravaTokens = async (auth0_uid) => {
     try {
         // Fetch the user from the database
         const result = await usersDb.findOne({ auth0_uid: auth0_uid })
@@ -123,13 +109,12 @@ const getUserStravaTokens = async (auth0_uid) => {
 }
 
 module.exports = {
-    getUserSpotifyTokens,
-    getUserStravaTokens,
-    getUserTokensByServiceId,
-    updateUserDataByIdMongo,
-    getUserDataByIdMongo,
-    updateUserTokens,
-    deleteUserDataByIdMongo,
-    deleteUserConnectionData,
-    setUserDataByIdMongo
+    getSpotifyTokens,
+    getStravaTokens,
+    getUserTokensByService,
+    saveUser,
+    getUser,
+    updateTokens,
+    deleteUser,
+    deleteAppConnections,
 };

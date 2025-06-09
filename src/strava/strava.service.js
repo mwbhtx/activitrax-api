@@ -1,14 +1,14 @@
-const mongoUserDb = require("../mongodb/user.repository.js");
-const stravaApi = require("./strava.api.js");
-const spotifyApi = require("../spotify/spotify.api.js");
-const mongoTracklistDb = require("../mongodb/tracklist.repository.js");
-const mongoActivityDb = require("../mongodb/activity.repository.js");
+const mongoUserDb = require("../mongodb/user.repository");
+const stravaApi = require("./strava.api");
+const spotifyApi = require("../spotify/spotify.api");
+const mongoTracklistDb = require("../mongodb/tracklist.repository");
+const mongoActivityDb = require("../mongodb/activity.repository");
 const moment = require('moment');
 const _ = require('lodash');
 
-const processStravaActivityCreated = async (strava_uid, activity_id) => {
+const processActivity = async (strava_uid, activity_id) => {
     // fetch user data
-    const userData = await mongoUserDb.getUserDataByIdMongo("strava", strava_uid)
+    const userData = await mongoUserDb.getUser("strava", strava_uid)
 
     // extract strava acess token
     const stravaTokens = {
@@ -27,26 +27,26 @@ const processStravaActivityCreated = async (strava_uid, activity_id) => {
     const auth0_uid = _.get(userData, 'auth0_uid');
 
     // fetch activity details
-    let activity = await stravaApi.fetchStravaActivityDetails(strava_uid, stravaTokens, activity_id);
+    let activity = await stravaApi.getActivity(strava_uid, stravaTokens, activity_id);
 
     // get activity start time and end time
     const startDateTimeMillis = new Date(activity.start_date).getTime();
     const endDateTimeMillis = startDateTimeMillis + (activity.elapsed_time * 1000);
 
     // fetch spotify tracks within activity time range
-    const trackList = await spotifyApi.fetchSpotifyTracks(spotify_uid, spotifyTokens, startDateTimeMillis, endDateTimeMillis);
+    const trackList = await spotifyApi.getTracklist(spotify_uid, spotifyTokens, startDateTimeMillis, endDateTimeMillis);
 
     // If there are tracks in the tracklist, prepend the description with a header
     if (trackList.length > 0) {
 
         // store tracklist in mongodb
-        await mongoTracklistDb.storeTracklistInMongo(auth0_uid, { tracklist: trackList }, activity.id);
+        await mongoTracklistDb.saveTracklist(auth0_uid, { tracklist: trackList }, activity.id);
 
         // store activity in mongodb
-        await mongoActivityDb.storeActivity(auth0_uid, activity);
+        await mongoActivityDb.saveActivity(auth0_uid, activity);
 
         // add last_strava_activity to user data
-        await mongoUserDb.updateUserDataByIdMongo("strava", strava_uid, { last_strava_activity: activity })
+        await mongoUserDb.saveUser("strava", strava_uid, { last_strava_activity: activity })
 
         // parse tracklist string to append to activity description
         let newActivityDescription = '';
@@ -62,27 +62,27 @@ const processStravaActivityCreated = async (strava_uid, activity_id) => {
         // because there may be other webhooks in the queue, wait for the activity to be updated before continuing
         setTimeout(async () => {
             // fetch activity details again to make sure it has been updated
-            activity = await stravaApi.fetchStravaActivityDetails(strava_uid, stravaTokens, activity_id);
+            activity = await stravaApi.getActivity(strava_uid, stravaTokens, activity_id);
 
             // if there was already a description, append the tracklist to the end
             if (activity.description) {
                 newActivityDescription = activity.description + '\n\n' + newActivityDescription
             }
 
-            await stravaApi.updateStravaActivity(strava_uid, activity_id, newActivityDescription);
+            await stravaApi.saveActivity(strava_uid, activity_id, newActivityDescription);
         }, 5000);
     }
 }
 
 const reprocessLastStravaActivity = async (strava_uid) => {
-    const lastStravaActivity = await stravaApi.getLastStravaActivityStrava(strava_uid);
+    const lastStravaActivity = await stravaApi.getLastActivity(strava_uid);
 
     if (lastStravaActivity) {
-        await processStravaActivityCreated(strava_uid, lastStravaActivity.id)
+        await processActivity(strava_uid, lastStravaActivity.id)
     }
 }
 
-const minifyStravaActivity = async (activity) => {
+const minifyActivityDetails = async (activity) => {
     try {
         // Get local start date time object from strava activity
         const local_start_datetime = activity.start_date_local;
@@ -100,7 +100,7 @@ const minifyStravaActivity = async (activity) => {
         const distance_miles_rounded = distance_miles.toFixed(2);
 
         // fetch tracklist for this activity
-        const trackListDetails = await mongoTracklistDb.getStravaActivityTracklist(activity.id)
+        const trackListDetails = await mongoTracklistDb.getTracklist(activity.id)
 
         const trackList = trackListDetails.tracklist
 
@@ -133,7 +133,7 @@ const minifyStravaActivity = async (activity) => {
 
 
 module.exports = {
-    processStravaActivityCreated,
+    processActivity,
     reprocessLastStravaActivity,
-    minifyStravaActivity
+    minifyActivityDetails
 };
