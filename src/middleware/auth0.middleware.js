@@ -4,7 +4,7 @@ const dotenv = require("dotenv");
 dotenv.config();
 
 const validateAccessToken = auth({
-  issuerBaseURL: `https://your-tenant.us.auth0.com`,
+  issuerBaseURL: process.env.AUTH0_ISSUER_BASE_URL, 
   audience: process.env.AUTH0_AUDIENCE,
 });
 
