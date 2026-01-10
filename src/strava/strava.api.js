@@ -1,6 +1,6 @@
 const mongoUserDb = require("../mongodb/user.repository");
 const axios = require("axios");
-const stravaClientId = 'REDACTED_STRAVA_CLIENT_ID'
+const stravaClientId = process.env.STRAVA_CLIENT_ID
 const _ = require('lodash');
 
 async function getUser(strava_id) {

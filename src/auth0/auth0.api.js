@@ -1,6 +1,6 @@
 const axios = require('axios');
 const auth0TokenExchangeUrl = process.env.AUTH0_TOKEN_URL
-const auth0ApiUrl = 'https://your-tenant.us.auth0.com/api/v2'
+const auth0ApiUrl = process.env.AUTH0_API_URL
 
 const getUser = async (uid) => {
     const auth0_management_token = await getAuth0ManagementToken();
