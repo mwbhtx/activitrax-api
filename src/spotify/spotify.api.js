@@ -1,6 +1,6 @@
 const mongoUserDb = require("../mongodb/user.repository");
 const axios = require('axios')
-const spotifyClientId = 'REDACTED_SPOTIFY_CLIENT_ID'
+const spotifyClientId = process.env.SPOTIFY_CLIENT_ID
 const _ = require('lodash');
 
 const getUser = async (uid, tokens) => {

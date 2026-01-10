@@ -128,10 +128,6 @@ const minifyActivityDetails = async (activity) => {
     }
 }
 
-
-
-
-
 module.exports = {
     processActivity,
     reprocessLastStravaActivity,

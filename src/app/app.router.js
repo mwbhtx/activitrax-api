@@ -3,6 +3,7 @@ const { validateAccessToken } = require("../middleware/auth0.middleware");
 const appRouter = express.Router();
 const auth0Service = require("../auth0/auth0.service");
 const mongoUserDb = require("../mongodb/user.repository");
+const _ = require('lodash');
 
 /*
 * App Router

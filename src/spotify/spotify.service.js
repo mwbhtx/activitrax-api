@@ -2,6 +2,7 @@ const _ = require('lodash');
 const axios = require('axios');
 const spotifyApi = require("./spotify.api");
 const mongoUserDb = require("../mongodb/user.repository");
+const spotifyClientId = process.env.SPOTIFY_CLIENT_ID
 
 const exchangeAuthToken = async (auth0_uid, auth_token) => {
     // exchange spotify authorization token for an access + refresh token
