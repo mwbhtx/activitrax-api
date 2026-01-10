@@ -1,11 +1,12 @@
 const axios = require('axios');
 const auth0TokenExchangeUrl = 'https://your-tenant.us.auth0.com/oauth/token'
+const auth0ApiUrl = 'https://your-tenant.us.auth0.com/api/v2'
 
 const getUser = async (uid) => {
     const auth0_management_token = await getAuth0ManagementToken();
     const userProfileRequestOptions = {
         method: 'GET',
-        url: auth0ApiUrl + `/users/${uid}`,
+        url: `${auth0ApiUrl}/users/${uid}`,
         headers: {
             'content-type': 'application/x-www-form-urlencoded',
             'authorization': 'Bearer ' + auth0_management_token,
@@ -38,7 +39,7 @@ const getUserByQuery = async (query) => {
     const auth0_management_token = await getAuth0ManagementToken();
     const searchUserRequestOptions = {
         method: 'GET',
-        url: auth0ApiUrl + '/users',
+        url: `${auth0ApiUrl}/users`,
         headers: {
             'content-type': 'application/x-www-form-urlencoded',
             'authorization': 'Bearer ' + auth0_management_token,
@@ -58,7 +59,7 @@ const getAuth0UserAppMetaData = async (uid) => {
     const auth0_management_token = await getAuth0ManagementToken();
     const getUserProfileRequstOptions = {
         method: 'GET',
-        url: auth0ApiUrl + `/users/${uid}`,
+        url: `${auth0ApiUrl}/users/${uid}`,
         headers: {
             'content-type': 'application/x-www-form-urlencoded',
             'Authorization': 'Bearer ' + auth0_management_token,

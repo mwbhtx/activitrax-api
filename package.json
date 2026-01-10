@@ -1,14 +1,14 @@
 {
-  "name": "api_express_javascript_hello-world",
+  "name": "activitrax-api",
   "version": "1.0.0",
-  "description": "",
+  "description": "Activitrax API",
   "main": "index.js",
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js"
   },
   "keywords": [],
-  "author": "",
+  "author": "matthew-bennett",
   "license": "ISC",
   "dependencies": {
     "axios": "^1.2.2",
