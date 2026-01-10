@@ -35,7 +35,7 @@ messagesRouter.get("/auth0_management_token", validateAccessToken, (req, res) =>
   return res.status(401).json({ message: 'Unauthorized' });
   var options = {
     method: 'POST',
-    url: 'https://your-tenant.us.auth0.com/oauth/token',
+    url: process.env.AUTH0_TOKEN_URL,
     headers: { 'content-type': 'application/x-www-form-urlencoded' },
     data: new URLSearchParams({
       grant_type: 'client_credentials',
