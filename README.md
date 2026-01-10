@@ -11,7 +11,7 @@
 AUTH0_M2M_CLIENT_ID=m2m-client-id
 AUTH0_M2M_CLIENT_SECRET=m2m-client-secret
 AUTH0_AUDIENCE=auth0-audience
-AUTH0_ISSUER_BASE_URL=https://your-tenant.us.auth0.com
+AUTH0_ISSUER_URL=https://your-tenant.us.auth0.com
 AUTH0_TOKEN_URL=https://your-tenant.us.auth0.com/oauth/token
 AUTH0_API_URL=https://your-tenant.us.auth0.com/api/v2
 MONGO_URI=mongodb://localhost:27017/your-database-name
