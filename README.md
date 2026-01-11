@@ -54,7 +54,9 @@ Copy the generated URL (e.g., `https://abc123.trycloudflare.com`) and update `ST
 
 #### 4. Configure Auth0 for Postman:
 
-To test API endpoints locally with Postman, you need to set up OAuth 2.0 authentication:
+To test API endpoints locally with Postman, you need to set up OAuth 2.0 authentication.
+
+**Quick option:** Log in to [activitrax.app](https://activitrax.app) and navigate to **Settings** to view your API access token.
 
 **In Auth0 Dashboard:**
 1. Go to **Applications → Your SPA App → Settings**
