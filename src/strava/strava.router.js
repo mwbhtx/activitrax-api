@@ -85,7 +85,7 @@ stravaRouter.post('/webhook_callback', async (req, res) => {
 stravaRouter.get('/webhook_details', validateAccessToken, async (req, res) => {
     try {
         const details = await stravaApi.getWebhook();
-        res.status(200).json({ message: 'success' });
+        res.status(200).json(details);
     }
     catch (error) {
         const error_message = _.get(error, 'response.data');
