@@ -67,13 +67,27 @@ stravaRouter.post('/process-last-activity/:strava_uid', validateAccessToken, asy
 
 stravaRouter.post('/webhook_callback', async (req, res) => {
     try {
-        const { owner_id, object_id, aspect_type, object_type } = req.body;
-        console.log('webhook post received', owner_id, object_id, aspect_type)
+        const { owner_id, object_id, aspect_type, object_type, subscription_id } = req.body;
+        console.log('webhook post received', owner_id, object_id, aspect_type);
+
+        // Validate subscription_id matches our registered webhook
+        if (String(subscription_id) !== process.env.STRAVA_WEBHOOK_SUBSCRIPTION_ID) {
+            console.log('Invalid subscription_id:', subscription_id);
+            return res.status(401).json({ message: 'unauthorized' });
+        }
+
+        // Validate the owner exists in our database
+        const user = await mongoUserDb.getUser("strava", owner_id);
+        if (!user) {
+            console.log('Unknown owner_id:', owner_id);
+            return res.status(200).json({ message: 'success' }); // Return 200 to avoid Strava retries
+        }
+
         res.status(200).json({ message: 'success' });
+
         if (aspect_type === 'create' && object_type === 'activity') {
             await stravaService.processActivity(owner_id, object_id);
         }
-
     }
     catch (error) {
         const error_message = _.get(error, 'response.data');
