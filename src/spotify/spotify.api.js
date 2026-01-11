@@ -75,14 +75,22 @@ const getTracklist = async (uid, tokens, start_time, end_time) => {
     })
 
     const tracks = filteredTracks.map(item => {
+        // Get smallest album image (64px) for efficient loading, fallback to first available
+        const albumImages = item.track.album.images || [];
+        const albumImage = albumImages.length > 0
+            ? (albumImages.find(img => img.width === 64) || albumImages[albumImages.length - 1]).url
+            : null;
+
         return {
             name: item.track.name,
             artist: item.track.artists[0].name,
             album: item.track.album.name,
+            album_image: albumImage,
             duration: item.track.duration_ms,
             played_at: item.played_at,
             href: item.track.href,
             preview_url: item.track.preview_url,
+            spotify_url: item.track.external_urls?.spotify || null,
         }
     })
 

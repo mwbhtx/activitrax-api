@@ -84,6 +84,23 @@ const processActivity = async (strava_uid, activity_id) => {
     // store tracklist in mongodb
     await mongoTracklistDb.saveTracklist(auth0_uid, { tracklist: trackList }, activity.id);
 
+    // Save track count on the activity
+    await mongoActivityDb.updateActivity(auth0_uid, activity.id, {
+        track_count: trackList.length
+    });
+
+    // Check if user has Strava description updates enabled (default to true)
+    const stravaDescriptionEnabled = _.get(userData, 'strava_description_enabled', true);
+
+    if (!stravaDescriptionEnabled) {
+        // User has disabled Strava description updates, mark as success without updating
+        console.log(`Activity ${activity_id}: Strava description disabled by user preference`);
+        await mongoActivityDb.updateActivity(auth0_uid, activity.id, {
+            processing_status: ACTIVITY_STATUS.SUCCESS
+        });
+        return;
+    }
+
     // parse tracklist string to append to activity description
     let newActivityDescription = '';
     trackList.forEach((track) => {

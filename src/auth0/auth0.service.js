@@ -18,6 +18,9 @@ const getUserConfigForClient = async (auth0_uid) => {
         userConfig.last_strava_activity = await stravaService.minifyActivityDetails(_.get(userProfile, "last_strava_activity"))
     }
 
+    // User preferences (default to true if not set)
+    userConfig.strava_description_enabled = _.get(userProfile, "strava_description_enabled", true);
+
     return userConfig;
 }
 
