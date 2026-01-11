@@ -21,7 +21,7 @@ SPOTIFY_REDIRECT_URI=http://localhost:3000/callback
 STRAVA_CLIENT_ID=strava-client-id
 STRAVA_CLIENT_SECRET=strava-client-secret
 STRAVA_CALLBACK_URL=https://your-tunnel-subdomain.trycloudflare.com/api/v1/strava/webhook_callback
-STRAVA_WEBOHOOK_VERIFY_TOKEN=strava-webhook-verify-token
+STRAVA_WEBHOOK_VERIFICATION_TOKEN=strava-webhook-verify-token
 ```
 
 ---

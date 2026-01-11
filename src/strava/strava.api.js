@@ -88,7 +88,7 @@ const createStravaWebhook = async () => {
             client_id: stravaClientId,
             client_secret: process.env.STRAVA_CLIENT_SECRET,
             callback_url: process.env.STRAVA_CALLBACK_URL,
-            verify_token: process.env.STRAVA_WEBOHOOK_VERIFY_TOKEN
+            verify_token: process.env.STRAVA_WEBHOOK_VERIFICATION_TOKEN
         }
     }
     await axios(reqConfig)
