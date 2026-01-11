@@ -104,7 +104,9 @@ stravaRouter.post('/webhook_callback', async (req, res) => {
         res.status(200).json({ message: 'success' });
 
         if (aspect_type === 'create' && object_type === 'activity') {
-            await stravaService.processActivity(owner_id, object_id);
+            // Fire and forget - don't await, to ensure 200 is returned immediately
+            stravaService.processActivity(owner_id, object_id)
+                .catch(err => console.error('processActivity failed:', err));
         }
     }
     catch (error) {

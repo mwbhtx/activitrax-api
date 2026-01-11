@@ -6,71 +6,115 @@ const mongoActivityDb = require("../mongodb/activity.repository");
 const moment = require('moment');
 const _ = require('lodash');
 
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Activity processing status constants
+const ACTIVITY_STATUS = {
+    PROCESSING: 'processing',
+    SUCCESS: 'success',
+    NO_SPOTIFY: 'no_spotify',
+    SPOTIFY_ERROR: 'spotify_error',
+    NO_TRACKS: 'no_tracks',
+    STRAVA_UPDATE_ERROR: 'strava_update_error'
+};
+
 const processActivity = async (strava_uid, activity_id) => {
     // fetch user data
-    const userData = await mongoUserDb.getUser("strava", strava_uid)
+    const userData = await mongoUserDb.getUser("strava", strava_uid);
+    const auth0_uid = _.get(userData, 'auth0_uid');
 
-    // extract strava acess token
+    // extract strava access token
     const stravaTokens = {
         access_token: _.get(userData, 'strava_access_token'),
         refresh_token: _.get(userData, 'strava_refresh_token')
+    };
+
+    // fetch activity details from Strava
+    let activity = await stravaApi.getActivity(strava_uid, stravaTokens, activity_id);
+
+    // Save activity immediately with processing status
+    activity.processing_status = ACTIVITY_STATUS.PROCESSING;
+    await mongoActivityDb.saveActivity(auth0_uid, activity);
+
+    // add last_strava_activity to user data
+    await mongoUserDb.saveUser("strava", strava_uid, { last_strava_activity: activity });
+
+    // Check if user has Spotify connected
+    if (!userData?.spotify_uid || !userData?.spotify_access_token) {
+        console.log(`Activity ${activity_id}: user ${strava_uid} has no Spotify connected`);
+        await mongoActivityDb.updateActivity(auth0_uid, activity.id, {
+            processing_status: ACTIVITY_STATUS.NO_SPOTIFY
+        });
+        return;
     }
 
     // extract spotify access token
     const spotifyTokens = {
         access_token: _.get(userData, 'spotify_access_token'),
         refresh_token: _.get(userData, 'spotify_refresh_token')
-    }
-
-    // extract spotify user id
+    };
     const spotify_uid = _.get(userData, 'spotify_uid');
-    const auth0_uid = _.get(userData, 'auth0_uid');
-
-    // fetch activity details
-    let activity = await stravaApi.getActivity(strava_uid, stravaTokens, activity_id);
 
     // get activity start time and end time
     const startDateTimeMillis = new Date(activity.start_date).getTime();
     const endDateTimeMillis = startDateTimeMillis + (activity.elapsed_time * 1000);
 
     // fetch spotify tracks within activity time range
-    const trackList = await spotifyApi.getTracklist(spotify_uid, spotifyTokens, startDateTimeMillis, endDateTimeMillis);
+    let trackList;
+    try {
+        trackList = await spotifyApi.getTracklist(spotify_uid, spotifyTokens, startDateTimeMillis, endDateTimeMillis);
+    } catch (err) {
+        console.error(`Activity ${activity_id}: Spotify API error:`, err);
+        await mongoActivityDb.updateActivity(auth0_uid, activity.id, {
+            processing_status: ACTIVITY_STATUS.SPOTIFY_ERROR,
+            processing_error: err.message || 'Unknown Spotify error'
+        });
+        return;
+    }
 
-    // If there are tracks in the tracklist, prepend the description with a header
-    if (trackList.length > 0) {
+    // Check if any tracks were found
+    if (trackList.length === 0) {
+        console.log(`Activity ${activity_id}: no Spotify tracks found in time range`);
+        await mongoActivityDb.updateActivity(auth0_uid, activity.id, {
+            processing_status: ACTIVITY_STATUS.NO_TRACKS
+        });
+        return;
+    }
 
-        // store tracklist in mongodb
-        await mongoTracklistDb.saveTracklist(auth0_uid, { tracklist: trackList }, activity.id);
+    // store tracklist in mongodb
+    await mongoTracklistDb.saveTracklist(auth0_uid, { tracklist: trackList }, activity.id);
 
-        // store activity in mongodb
-        await mongoActivityDb.saveActivity(auth0_uid, activity);
+    // parse tracklist string to append to activity description
+    let newActivityDescription = '';
+    trackList.forEach((track) => {
+        newActivityDescription += `${track.artist} - ${track.name}\n`;
+    });
+    newActivityDescription += '\ntracklist by activitrax.app';
 
-        // add last_strava_activity to user data
-        await mongoUserDb.saveUser("strava", strava_uid, { last_strava_activity: activity })
+    // Wait for other webhook listeners to finish updating the activity
+    await delay(5000);
 
-        // parse tracklist string to append to activity description
-        let newActivityDescription = '';
+    try {
+        // fetch activity details again to get any description added by user or other apps
+        activity = await stravaApi.getActivity(strava_uid, stravaTokens, activity_id);
 
-        // for each track in tracklist, append to description string as a minified list
-        trackList.forEach((track, index) => {
-            newActivityDescription += `${track.artist} - ${track.name}\n`;
-        })
+        // if there was already a description, append the tracklist to the end
+        if (activity.description) {
+            newActivityDescription = activity.description + '\n\n' + newActivityDescription;
+        }
 
-        // add footer to tracklist
-        newActivityDescription += '\ntracklist by activitrax.app'
+        await stravaApi.saveActivity(strava_uid, activity_id, newActivityDescription);
 
-        // because there may be other webhooks in the queue, wait for the activity to be updated before continuing
-        setTimeout(async () => {
-            // fetch activity details again to make sure it has been updated
-            activity = await stravaApi.getActivity(strava_uid, stravaTokens, activity_id);
-
-            // if there was already a description, append the tracklist to the end
-            if (activity.description) {
-                newActivityDescription = activity.description + '\n\n' + newActivityDescription
-            }
-
-            await stravaApi.saveActivity(strava_uid, activity_id, newActivityDescription);
-        }, 5000);
+        // Mark as successful
+        await mongoActivityDb.updateActivity(auth0_uid, activity.id, {
+            processing_status: ACTIVITY_STATUS.SUCCESS
+        });
+    } catch (err) {
+        console.error('Failed to update Strava activity description:', err);
+        await mongoActivityDb.updateActivity(auth0_uid, activity.id, {
+            processing_status: ACTIVITY_STATUS.STRAVA_UPDATE_ERROR,
+            processing_error: err.message || 'Unknown Strava error'
+        });
     }
 }
 
@@ -131,5 +175,6 @@ const minifyActivityDetails = async (activity) => {
 module.exports = {
     processActivity,
     reprocessLastStravaActivity,
-    minifyActivityDetails
+    minifyActivityDetails,
+    ACTIVITY_STATUS
 };

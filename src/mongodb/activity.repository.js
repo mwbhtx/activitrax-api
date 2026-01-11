@@ -39,8 +39,21 @@ const getLastActivity = async (auth0_uid) => {
     }
 }
 
+// Update an existing activity by strava activity id
+const updateActivity = async (auth0_uid, strava_activity_id, updates) => {
+    try {
+        await activitiesDb.updateOne(
+            { auth0_uid: auth0_uid, id: strava_activity_id },
+            { $set: updates }
+        );
+    } catch (err) {
+        console.log(err.stack);
+    }
+}
+
 module.exports = {
     saveActivity,
     getActivities,
-    getLastActivity
+    getLastActivity,
+    updateActivity
 }
