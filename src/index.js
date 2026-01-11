@@ -45,7 +45,9 @@ app.use((req, res, next) => {
 
 app.use(nocache());
 
-app.use(cors());
+app.use(cors({
+  origin: ['https://activitrax.app', 'http://localhost:3000']
+}));
 
 app.use("/api/v1", apiRouter);
 
