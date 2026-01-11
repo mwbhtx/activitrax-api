@@ -1,5 +1,5 @@
 const express = require("express");
-const { validateAccessToken } = require("../middleware/auth0.middleware");
+const { validateAccessToken, isAdmin, requireAdmin } = require("../middleware/auth0.middleware");
 const stravaRouter = express.Router();
 const _ = require('lodash');
 const stravaApi = require('./strava.api.js');
@@ -42,7 +42,16 @@ stravaRouter.get('/activity', validateAccessToken, async (req, res) => {
 
 stravaRouter.get('/user_profile', validateAccessToken, async (req, res) => {
     try {
-        const strava_uid = req.query.user_id
+        const strava_uid = req.query.user_id;
+        const auth0_uid = req.auth.payload.sub;
+
+        // Check ownership or admin role
+        const userProfile = await mongoUserDb.getUser("auth0", auth0_uid);
+        const isOwner = userProfile?.strava_uid === strava_uid;
+        if (!isOwner && !isAdmin(req)) {
+            return res.status(403).json({ message: 'forbidden' });
+        }
+
         const user_profile = await stravaApi.getUser(strava_uid);
         res.status(200).json(user_profile);
     }
@@ -56,6 +65,15 @@ stravaRouter.get('/user_profile', validateAccessToken, async (req, res) => {
 stravaRouter.post('/process-last-activity/:strava_uid', validateAccessToken, async (req, res) => {
     try {
         const strava_uid = req.params.strava_uid;
+        const auth0_uid = req.auth.payload.sub;
+
+        // Check ownership or admin role
+        const userProfile = await mongoUserDb.getUser("auth0", auth0_uid);
+        const isOwner = userProfile?.strava_uid === strava_uid;
+        if (!isOwner && !isAdmin(req)) {
+            return res.status(403).json({ message: 'forbidden' });
+        }
+
         await stravaService.reprocessLastStravaActivity(strava_uid);
         res.status(200).json({ message: 'success' });
     }
@@ -96,7 +114,7 @@ stravaRouter.post('/webhook_callback', async (req, res) => {
     }
 });
 
-stravaRouter.get('/webhook_details', validateAccessToken, async (req, res) => {
+stravaRouter.get('/webhook_details', validateAccessToken, requireAdmin, async (req, res) => {
     try {
         const details = await stravaApi.getWebhook();
         res.status(200).json(details);
@@ -126,7 +144,7 @@ stravaRouter.get('/webhook_callback', async (req, res) => {
 
 })
 
-stravaRouter.post('/webhook_create', validateAccessToken, async (req, res) => {
+stravaRouter.post('/webhook_create', validateAccessToken, requireAdmin, async (req, res) => {
     try {
         await stravaApi.createStravaWebhook();
         res.status(200).json({ message: 'success' })
@@ -138,7 +156,7 @@ stravaRouter.post('/webhook_create', validateAccessToken, async (req, res) => {
     }
 })
 
-stravaRouter.post('/webhook_delete', validateAccessToken, async (req, res) => {
+stravaRouter.post('/webhook_delete', validateAccessToken, requireAdmin, async (req, res) => {
     try {
         await stravaApi.deleteWebhook();
         res.status(200).json({ message: 'success' })

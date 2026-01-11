@@ -1,5 +1,5 @@
 const express = require("express");
-const { validateAccessToken } = require("../middleware/auth0.middleware");
+const { validateAccessToken, isAdmin } = require("../middleware/auth0.middleware");
 const spotifyRouter = express.Router();
 const _ = require('lodash');
 const spotifyApi = require("./spotify.api");
@@ -8,7 +8,16 @@ const mongoUserDb = require('../mongodb/user.repository.js');
 
 spotifyRouter.get('/user_profile', validateAccessToken, async (req, res) => {
     try {
-        const spotify_uid = req.query.user_id
+        const spotify_uid = req.query.user_id;
+        const auth0_uid = req.auth.payload.sub;
+
+        // Check ownership or admin role
+        const userProfile = await mongoUserDb.getUser("auth0", auth0_uid);
+        const isOwner = userProfile?.spotify_uid === spotify_uid;
+        if (!isOwner && !isAdmin(req)) {
+            return res.status(403).json({ message: 'forbidden' });
+        }
+
         const user_profile = await spotifyApi.getUser(spotify_uid);
         res.status(200).json(user_profile);
     }
