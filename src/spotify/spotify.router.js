@@ -50,19 +50,4 @@ spotifyRouter.post("/exchange_token", validateAccessToken, async (req, res) => {
     }
 });
 
-spotifyRouter.get("/access_token", validateAccessToken, async (req, res) => {
-    try {
-        const user_id = req.auth.payload.sub;
-        const userProfile = await mongoUserDb.getUser("auth0", user_id);
-        res.status(200).json({
-            access_token: userProfile.spotify_access_token,
-            refresh_token: userProfile.spotify_refresh_token
-        });
-    } catch (error) {
-        const error_message = _.get(error, 'response.data');
-        console.log(JSON.stringify(error_message) || error);
-        res.status(500).json({ message: 'server error' });
-    }
-});
-
 module.exports = { spotifyRouter };
