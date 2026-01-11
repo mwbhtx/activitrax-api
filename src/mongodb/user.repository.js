@@ -2,8 +2,17 @@ const mongoClient = require('./mongodb.service.js');
 const _ = require('lodash');
 const usersDb = mongoClient.db().collection('users');
 
+const ALLOWED_KEYS = ['auth0', 'strava', 'spotify'];
+
+const validateKey = (key) => {
+    if (!ALLOWED_KEYS.includes(key)) {
+        throw new Error(`Invalid key: ${key}`);
+    }
+};
+
 // get user access tokens and refresh tokens for a service using key and value args
 const getUserTokensByService = async (key, value) => {
+    validateKey(key);
     try {
         // Fetch the user from the database
         const result = await usersDb.findOne({ [key + '_uid']: _.toString(value) });
@@ -23,6 +32,7 @@ const getUserTokensByService = async (key, value) => {
 
 // // update user data in MongoDb
 const saveUser = async (key, value, data) => {
+    validateKey(key);
     try {
         // Update the user in the database
         await usersDb.updateOne({ [key + '_uid']: _.toString(value) }, { $set: data }, { upsert: true });
@@ -34,6 +44,7 @@ const saveUser = async (key, value, data) => {
 
 // delete fields from user object in mongodb
 const deleteUser = async (key, value, fields) => {
+    validateKey(key);
     try {
         // delete fields from the user in the database
         await usersDb.updateOne({ [key + '_uid']: _.toString(value) }, { $unset: fields }, { upsert: false });
@@ -57,6 +68,7 @@ const deleteAppConnections = async (auth0_uid, service) => {
 
 // fetch user object from mongodb use key and value pair
 const getUser = async (key, value) => {
+    validateKey(key);
     try {
         const result = await usersDb.findOne({ [key + '_uid']: _.toString(value) });
         return result;
@@ -83,6 +95,7 @@ const getSpotifyTokens = async (auth0_uid) => {
 
 // Update user access and refresh tokens
 const updateTokens = async (auth0_uid, service_name, access_token, refresh_token) => {
+    validateKey(service_name);
     try {
         // Update the user in the database
         await usersDb.updateOne({ auth0_uid: auth0_uid }, { $set: { [service_name + '_access_token']: access_token, [service_name + '_refresh_token']: refresh_token } }, { upsert: true });
