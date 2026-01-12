@@ -85,8 +85,8 @@ stravaRouter.post('/process-last-activity/:strava_uid', validateAccessToken, asy
 
 stravaRouter.post('/webhook_callback', async (req, res) => {
     try {
-        const { owner_id, object_id, aspect_type, object_type, subscription_id } = req.body;
-        console.log('webhook post received', owner_id, object_id, aspect_type);
+        const { owner_id, object_id, aspect_type, object_type, subscription_id, updates } = req.body;
+        console.log('webhook post received', owner_id, object_id, aspect_type, object_type);
 
         // Validate subscription_id matches our registered webhook
         if (String(subscription_id) !== process.env.STRAVA_WEBHOOK_SUBSCRIPTION_ID) {
@@ -102,6 +102,14 @@ stravaRouter.post('/webhook_callback', async (req, res) => {
         }
 
         res.status(200).json({ message: 'success' });
+
+        // Handle deauthorization - user revoked access from Strava settings
+        if (object_type === 'athlete' && aspect_type === 'update' && updates?.authorized === 'false') {
+            console.log('User deauthorized from Strava:', owner_id);
+            mongoUserDb.deleteAppConnections(user.auth0_uid, 'strava')
+                .catch(err => console.error('deleteAppConnections failed:', err));
+            return;
+        }
 
         if (aspect_type === 'create' && object_type === 'activity') {
             // Fire and forget - don't await, to ensure 200 is returned immediately
