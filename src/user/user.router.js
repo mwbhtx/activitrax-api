@@ -7,6 +7,7 @@ const mongoUserDb = require("../mongodb/user.repository");
 const auth0Service = require("../auth0/auth0.service");
 const _ = require('lodash');
 const stravaApi = require('../strava/strava.api.js');
+const likedTracksRepository = require("../mongodb/liked_tracks.repository");
 
 /*
 * User Router
@@ -111,6 +112,63 @@ userRouter.post('/disconnect', validateAccessToken, async (req, res) => {
     } catch (error) {
         const error_message = _.get(error, 'response.data');
         console.log(JSON.stringify(error_message) || error);
+        res.status(500).json({ message: 'server error' });
+    }
+});
+
+// Like a track
+userRouter.post('/liked-tracks', validateAccessToken, async (req, res) => {
+    try {
+        const uid = req.auth.payload.sub;
+        const trackData = req.body.track;
+
+        if (!trackData || !trackData.spotify_track_id) {
+            return res.status(400).json({ message: 'track with spotify_track_id is required' });
+        }
+
+        const result = await likedTracksRepository.likeTrack(uid, trackData);
+        res.status(200).json(result);
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ message: 'server error' });
+    }
+});
+
+// Get liked track IDs (for dashboard state)
+// NOTE: This route must be defined BEFORE /liked-tracks/:spotify_track_id
+userRouter.get('/liked-tracks/ids', validateAccessToken, async (req, res) => {
+    try {
+        const uid = req.auth.payload.sub;
+        const likedTrackIds = await likedTracksRepository.getLikedTrackIds(uid);
+        res.status(200).json({ liked_track_ids: likedTrackIds });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ message: 'server error' });
+    }
+});
+
+// Unlike a track
+userRouter.delete('/liked-tracks/:spotify_track_id', validateAccessToken, async (req, res) => {
+    try {
+        const uid = req.auth.payload.sub;
+        const spotify_track_id = req.params.spotify_track_id;
+
+        const result = await likedTracksRepository.unlikeTrack(uid, spotify_track_id);
+        res.status(200).json(result);
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ message: 'server error' });
+    }
+});
+
+// Get liked tracks with full metadata (for liked tracks page)
+userRouter.get('/liked-tracks', validateAccessToken, async (req, res) => {
+    try {
+        const uid = req.auth.payload.sub;
+        const tracks = await likedTracksRepository.getLikedTracksWithMetadata(uid);
+        res.status(200).json({ tracks });
+    } catch (error) {
+        console.log(error);
         res.status(500).json({ message: 'server error' });
     }
 });
