@@ -82,11 +82,16 @@ userRouter.post('/disconnect', validateAccessToken, async (req, res) => {
         const uid = req.auth.payload.sub;
         const service = req.body.service_name;
 
-        // If disconnecting Strava, deauthorize with Strava first
+        // If disconnecting Strava, try to deauthorize with Strava first
+        // If this fails (e.g., token already revoked), continue with cleanup
         if (service === 'strava') {
             const userProfile = await mongoUserDb.getUser("auth0", uid);
             if (userProfile?.strava_access_token) {
-                await stravaApi.deauthorizeUser(userProfile.strava_access_token);
+                try {
+                    await stravaApi.deauthorizeUser(userProfile.strava_access_token);
+                } catch (deauthError) {
+                    console.log('Strava deauthorization failed (token may already be revoked):', deauthError.message);
+                }
             }
         }
 
