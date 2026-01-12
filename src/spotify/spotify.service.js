@@ -4,7 +4,7 @@ const spotifyApi = require("./spotify.api");
 const mongoUserDb = require("../mongodb/user.repository");
 const spotifyClientId = process.env.SPOTIFY_CLIENT_ID
 
-const exchangeAuthToken = async (auth0_uid, auth_token) => {
+const exchangeAuthToken = async (auth0_uid, auth_token, scopes) => {
     // exchange spotify authorization token for an access + refresh token
     const reqConfig = {
         method: "POST",
@@ -36,6 +36,7 @@ const exchangeAuthToken = async (auth0_uid, auth_token) => {
         spotify_access_token: _.get(spotifyResponse, 'data.access_token'),
         spotify_refresh_token: _.get(spotifyResponse, 'data.refresh_token'),
         spotify_uid: _.get(userProfile, 'id'),
+        spotify_oauth_allows: scopes ? scopes.split(' ') : []
     }
 
     // save spotify user profile to mongodb
