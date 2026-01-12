@@ -5,6 +5,7 @@ const _ = require('lodash');
 const spotifyApi = require("./spotify.api");
 const spotifyService = require("./spotify.service");
 const mongoUserDb = require('../mongodb/user.repository.js');
+const auth0Service = require('../auth0/auth0.service.js');
 
 spotifyRouter.get('/user_profile', validateAccessToken, async (req, res) => {
     try {
@@ -51,6 +52,8 @@ spotifyRouter.post("/exchange_token", validateAccessToken, async (req, res) => {
         const auth_token = req.body.auth_token;
         const user_id = req.auth.payload.sub;
         await spotifyService.exchangeAuthToken(user_id, auth_token);
+        // Clear any disconnection warning now that user has reconnected
+        await auth0Service.clearDisconnectedService(user_id, 'spotify');
         res.status(200).json({ message: 'success' });
     } catch (error) {
         const error_message = _.get(error, 'response.data');

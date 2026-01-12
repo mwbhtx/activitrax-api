@@ -5,6 +5,7 @@ const _ = require('lodash');
 const stravaApi = require('./strava.api.js');
 const stravaService = require('./strava.service.js');
 const mongoUserDb = require('../mongodb/user.repository.js');
+const auth0Service = require('../auth0/auth0.service.js');
 
 stravaRouter.get('/activities', validateAccessToken, async (req, res) => {
     try {
@@ -183,6 +184,8 @@ stravaRouter.post("/exchange_token", validateAccessToken, async (req, res) => {
         const auth_token = req.body.auth_token;
         const user_id = req.auth.payload.sub;
         await stravaApi.exchangeAuthToken(user_id, auth_token);
+        // Clear any disconnection warning now that user has reconnected
+        await auth0Service.clearDisconnectedService(user_id, 'strava');
         res.status(200).json({ message: 'success' });
     } catch (error) {
         const error_message = _.get(error, 'response.data');

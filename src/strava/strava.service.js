@@ -3,7 +3,6 @@ const stravaApi = require("./strava.api");
 const spotifyApi = require("../spotify/spotify.api");
 const mongoTracklistDb = require("../mongodb/tracklist.repository");
 const mongoActivityDb = require("../mongodb/activity.repository");
-const moment = require('moment');
 const _ = require('lodash');
 
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -35,9 +34,6 @@ const processActivity = async (strava_uid, activity_id) => {
     // Save activity immediately with processing status
     activity.processing_status = ACTIVITY_STATUS.PROCESSING;
     await mongoActivityDb.saveActivity(auth0_uid, activity);
-
-    // add last_strava_activity to user data
-    await mongoUserDb.saveUser("strava", strava_uid, { last_strava_activity: activity });
 
     // Check if user has Spotify connected
     if (!userData?.spotify_uid || !userData?.spotify_access_token) {
@@ -143,55 +139,8 @@ const reprocessLastStravaActivity = async (strava_uid) => {
     }
 }
 
-const minifyActivityDetails = async (activity) => {
-    try {
-        // Get local start date time object from strava activity
-        const local_start_datetime = activity.start_date_local;
-
-        // Create formatted string for start date as DD/MM/YYYY
-        const local_start_date_formatted = moment(local_start_datetime).format('DD/MM/YYYY');
-
-        // Create formatted string for start time as H:MM AM/PM
-        const local_start_time_formatted = moment(local_start_datetime).format('h:mm A');
-
-        // convert meters to miles
-        const distance_miles = activity.distance * 0.000621371;
-
-        // limit distance in miles to 2 decimal places
-        const distance_miles_rounded = distance_miles.toFixed(2);
-
-        // fetch tracklist for this activity
-        const trackListDetails = await mongoTracklistDb.getTracklist(activity.id)
-
-        const trackList = trackListDetails.tracklist
-
-        const activityData = {
-            name: activity.name,
-            unit_preference: activity.unit_preference,
-            type: activity.type,
-            start_date: activity.start_date,
-            start_date_formatted: local_start_date_formatted,
-            start_time_formatted: local_start_time_formatted,
-            elapsed_time: activity.elapsed_time,
-            distance_meters: activity.distance,
-            distance_miles: distance_miles_rounded,
-            average_speed: activity.average_speed,
-            calories: activity.calories,
-            track_count: _.toString(trackList.length),
-            tracklist: trackList
-        }
-
-        return activityData
-    }
-    catch (error) {
-        console.log(`error minifying strava activity: ${error}`)
-        return null
-    }
-}
-
 module.exports = {
     processActivity,
     reprocessLastStravaActivity,
-    minifyActivityDetails,
     ACTIVITY_STATUS
 };
