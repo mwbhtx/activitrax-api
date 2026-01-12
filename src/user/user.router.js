@@ -77,6 +77,17 @@ userRouter.patch('/config', validateAccessToken, async (req, res) => {
     }
 });
 
+userRouter.post('/validate-connections', validateAccessToken, async (req, res) => {
+    try {
+        const user_id = req.auth.payload.sub;
+        const result = await auth0Service.validateConnections(user_id);
+        res.status(200).json(result);
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ message: 'server error' });
+    }
+});
+
 userRouter.post('/disconnect', validateAccessToken, async (req, res) => {
     try {
         const uid = req.auth.payload.sub;

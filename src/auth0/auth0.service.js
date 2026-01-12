@@ -73,8 +73,39 @@ const getUserConfigForClient = async (auth0_uid) => {
     return userConfig;
 }
 
+/**
+ * Validates all connected services by making API calls.
+ * Called in background after page load to detect revoked tokens.
+ */
+const validateConnections = async (auth0_uid) => {
+    const userProfile = await mongoUserDb.getUser("auth0", auth0_uid);
+    const results = {};
+
+    // Validate Strava if connected
+    if (_.get(userProfile, "strava_access_token")) {
+        const stravaUid = _.get(userProfile, "strava_uid");
+        results.strava = await validateServiceConnection(auth0_uid, 'strava', stravaUid, null);
+    }
+
+    // Validate Spotify if connected
+    if (_.get(userProfile, "spotify_access_token")) {
+        const spotifyUid = _.get(userProfile, "spotify_uid");
+        const spotifyTokens = {
+            access_token: _.get(userProfile, "spotify_access_token"),
+            refresh_token: _.get(userProfile, "spotify_refresh_token")
+        };
+        results.spotify = await validateServiceConnection(auth0_uid, 'spotify', spotifyUid, spotifyTokens);
+    }
+
+    // Return updated disconnected_services list
+    const updatedProfile = await mongoUserDb.getUser("auth0", auth0_uid);
+    results.disconnected_services = _.get(updatedProfile, 'disconnected_services', []);
+
+    return results;
+};
 
 module.exports = {
     getUserConfigForClient,
-    clearDisconnectedService
+    clearDisconnectedService,
+    validateConnections
 };

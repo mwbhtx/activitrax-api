@@ -11,7 +11,7 @@
 - [ ] Document MongoDB schema (users collection fields and their purposes)
 - [ ] Add rate limiting for Strava/Spotify API calls
 - [ ] Add monitoring/alerting for token revocation events
-- [ ] Consider caching service validation to reduce API calls on repeated config fetches
+- [ ] Cache background validation results - store `last_validated` timestamp on user document and skip validation if checked within the last hour
 
 ## Testing
 
