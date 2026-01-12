@@ -64,6 +64,10 @@ const getUserConfigForClient = async (auth0_uid) => {
     userConfig.strava = !!_.get(userProfile, "strava_access_token");
     userConfig.spotify = !!_.get(userProfile, "spotify_access_token");
 
+    // OAuth scopes granted
+    userConfig.spotify_oauth_allows = _.get(userProfile, "spotify_oauth_allows", []);
+    userConfig.strava_oauth_allows = _.get(userProfile, "strava_oauth_allows", []);
+
     // Return persisted disconnected services from database
     userConfig.disconnected_services = _.get(userProfile, 'disconnected_services', []);
 
