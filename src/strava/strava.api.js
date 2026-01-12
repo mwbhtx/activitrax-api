@@ -29,7 +29,7 @@ const sendApiRequest = async (strava_uid, reqConfig, tokens) => {
     }
     catch (error) {
         // if access token expired, try to exchange refresh token
-        if (error.response.status === 401) {
+        if (error.response?.status === 401) {
             const newTokens = await exchangeRefreshToken(strava_uid, tokens.refresh_token)
             reqConfig.headers["authorization"] = "Bearer " + newTokens.access_token
             const response = await axios(reqConfig)

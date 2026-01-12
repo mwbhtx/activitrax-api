@@ -112,7 +112,7 @@ const sendApiRequest = async (uid, reqConfig, tokens) => {
         return response
     }
     catch (error) {
-        if (error.response.status === 401) {
+        if (error.response?.status === 401) {
             const newTokens = await exchangeRefreshToken(uid, tokens.refresh_token)
             reqConfig.headers["authorization"] = "Bearer " + newTokens.access_token
             const response = await axios(reqConfig)

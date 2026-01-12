@@ -13,45 +13,30 @@ const validateKey = (key) => {
 // get user access tokens and refresh tokens for a service using key and value args
 const getUserTokensByService = async (key, value) => {
     validateKey(key);
-    try {
-        // Fetch the user from the database
-        const result = await usersDb.findOne({ [key + '_uid']: _.toString(value) });
+    // Fetch the user from the database
+    const result = await usersDb.findOne({ [key + '_uid']: _.toString(value) });
 
-        // Get the tokens based on key
-        const tokens = {
-            access_token: _.get(result, key + '_access_token', null),
-            refresh_token: _.get(result, key + '_refresh_token', null)
-        }
-
-        return tokens;
-
-    } catch (err) {
-        console.log(err.stack);
+    // Get the tokens based on key
+    const tokens = {
+        access_token: _.get(result, key + '_access_token', null),
+        refresh_token: _.get(result, key + '_refresh_token', null)
     }
+
+    return tokens;
 }
 
-// // update user data in MongoDb
+// update user data in MongoDb
 const saveUser = async (key, value, data) => {
     validateKey(key);
-    try {
-        // Update the user in the database
-        await usersDb.updateOne({ [key + '_uid']: _.toString(value) }, { $set: data }, { upsert: true });
-
-    } catch (err) {
-        console.log(err.stack);
-    }
+    // Update the user in the database
+    await usersDb.updateOne({ [key + '_uid']: _.toString(value) }, { $set: data }, { upsert: true });
 }
 
 // delete fields from user object in mongodb
 const deleteUser = async (key, value, fields) => {
     validateKey(key);
-    try {
-        // delete fields from the user in the database
-        await usersDb.updateOne({ [key + '_uid']: _.toString(value) }, { $unset: fields }, { upsert: false });
-    }
-    catch (err) {
-        console.log(err.stack);
-    }
+    // delete fields from the user in the database
+    await usersDb.updateOne({ [key + '_uid']: _.toString(value) }, { $unset: fields }, { upsert: false });
 }
 
 const deleteAppConnections = async (auth0_uid, service) => {
@@ -69,55 +54,37 @@ const deleteAppConnections = async (auth0_uid, service) => {
 // fetch user object from mongodb use key and value pair
 const getUser = async (key, value) => {
     validateKey(key);
-    try {
-        const result = await usersDb.findOne({ [key + '_uid']: _.toString(value) });
-        return result;
-    } catch (err) {
-        console.log(err.stack);
-    }
+    const result = await usersDb.findOne({ [key + '_uid']: _.toString(value) });
+    return result;
 }
 
 // Fetch spotify access and refresh token from user object in mongo
 const getSpotifyTokens = async (auth0_uid) => {
-    try {
-        // Fetch the user from the database
-        const result = await usersDb.findOne({ auth0_uid: auth0_uid })
+    // Fetch the user from the database
+    const result = await usersDb.findOne({ auth0_uid: auth0_uid })
 
-        // Return the tokens
-        return {
-            access_token: _.get(result, 'spotify_access_token'),
-            refresh_token: _.get(result, 'spotify_refresh_token')
-        }
-    } catch (err) {
-        console.log(err.stack);
+    // Return the tokens
+    return {
+        access_token: _.get(result, 'spotify_access_token'),
+        refresh_token: _.get(result, 'spotify_refresh_token')
     }
 }
 
 // Update user access and refresh tokens
 const updateTokens = async (auth0_uid, service_name, access_token, refresh_token) => {
     validateKey(service_name);
-    try {
-        // Update the user in the database
-        await usersDb.updateOne({ auth0_uid: auth0_uid }, { $set: { [service_name + '_access_token']: access_token, [service_name + '_refresh_token']: refresh_token } }, { upsert: true });
-
-    } catch (err) {
-        console.log(err.stack);
-    }
+    // Update the user in the database
+    await usersDb.updateOne({ auth0_uid: auth0_uid }, { $set: { [service_name + '_access_token']: access_token, [service_name + '_refresh_token']: refresh_token } }, { upsert: true });
 }
 
 const getStravaTokens = async (auth0_uid) => {
-    try {
-        // Fetch the user from the database
-        const result = await usersDb.findOne({ auth0_uid: auth0_uid })
+    // Fetch the user from the database
+    const result = await usersDb.findOne({ auth0_uid: auth0_uid })
 
-        // Return the tokens
-        return {
-            access_token: _.get(result, 'strava_access_token'),
-            refresh_token: _.get(result, 'strava_refresh_token')
-        }
-    }
-    catch (err) {
-        console.log(err.stack);
+    // Return the tokens
+    return {
+        access_token: _.get(result, 'strava_access_token'),
+        refresh_token: _.get(result, 'strava_refresh_token')
     }
 }
 
