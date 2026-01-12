@@ -194,6 +194,17 @@ const getActivity = async (uid, stravaTokens, activity_id) => {
     return response.data
 }
 
+const deauthorizeUser = async (access_token) => {
+    const reqConfig = {
+        method: "POST",
+        url: "https://www.strava.com/oauth/deauthorize",
+        headers: {
+            "Authorization": `Bearer ${access_token}`
+        }
+    }
+    await axios(reqConfig)
+}
+
 const exchangeRefreshToken = async (strava_uid, refresh_token) => {
     const reqConfig = {
         method: "POST",
@@ -233,6 +244,7 @@ module.exports = {
     getWebhook,
     createStravaWebhook,
     deleteWebhook,
+    deauthorizeUser,
     exchangeAuthToken,
     getLastActivity,
     getActivities

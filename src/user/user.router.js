@@ -6,6 +6,7 @@ const mongoTracklistDb = require("../mongodb/tracklist.repository");
 const mongoUserDb = require("../mongodb/user.repository");
 const auth0Service = require("../auth0/auth0.service");
 const _ = require('lodash');
+const stravaApi = require('../strava/strava.api.js');
 
 /*
 * User Router
@@ -80,6 +81,15 @@ userRouter.post('/disconnect', validateAccessToken, async (req, res) => {
     try {
         const uid = req.auth.payload.sub;
         const service = req.body.service_name;
+
+        // If disconnecting Strava, deauthorize with Strava first
+        if (service === 'strava') {
+            const userProfile = await mongoUserDb.getUser("auth0", uid);
+            if (userProfile?.strava_access_token) {
+                await stravaApi.deauthorizeUser(userProfile.strava_access_token);
+            }
+        }
+
         await mongoUserDb.deleteAppConnections(uid, service);
         res.status(200).json({ message: 'success' });
     } catch (error) {
