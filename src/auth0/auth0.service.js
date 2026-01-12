@@ -60,23 +60,9 @@ const getUserConfigForClient = async (auth0_uid) => {
     const userProfile = await mongoUserDb.getUser("auth0", auth0_uid);
     const userConfig = {};
 
-    // Validate Strava connection if tokens exist
-    if (_.get(userProfile, "strava_access_token")) {
-        const stravaUid = _.get(userProfile, "strava_uid");
-        const result = await validateServiceConnection(auth0_uid, 'strava', stravaUid, null);
-        userConfig.strava = result.valid;
-    }
-
-    // Validate Spotify connection if tokens exist
-    if (_.get(userProfile, "spotify_access_token")) {
-        const spotifyUid = _.get(userProfile, "spotify_uid");
-        const spotifyTokens = {
-            access_token: _.get(userProfile, "spotify_access_token"),
-            refresh_token: _.get(userProfile, "spotify_refresh_token")
-        };
-        const result = await validateServiceConnection(auth0_uid, 'spotify', spotifyUid, spotifyTokens);
-        userConfig.spotify = result.valid;
-    }
+    // Check if tokens exist
+    userConfig.strava = !!_.get(userProfile, "strava_access_token");
+    userConfig.spotify = !!_.get(userProfile, "spotify_access_token");
 
     // Return persisted disconnected services from database
     userConfig.disconnected_services = _.get(userProfile, 'disconnected_services', []);
