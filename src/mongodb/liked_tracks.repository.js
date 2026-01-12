@@ -112,6 +112,7 @@ const getLikedTracksWithMetadata = async (auth0_uid) => {
                 album: '$track.album',
                 album_image: '$track.album_image',
                 spotify_url: '$track.spotify_url',
+                preview_url: '$track.preview_url',
                 duration_ms: '$track.duration_ms',
                 liked_at: 1
             }

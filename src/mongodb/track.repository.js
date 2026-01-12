@@ -27,6 +27,10 @@ const upsertTrack = async (trackData) => {
                 spotify_url: trackData.spotify_url,
                 duration_ms: trackData.duration_ms,
                 created_at: new Date()
+            },
+            // Update preview_url even if track exists (it may have been missing before)
+            $set: {
+                preview_url: trackData.preview_url
             }
         },
         { upsert: true, returnDocument: 'after' }
