@@ -107,7 +107,7 @@ const createStravaWebhook = async () => {
     await axios(reqConfig)
 }
 
-const exchangeAuthToken = async (uid, auth_token) => {
+const exchangeAuthToken = async (uid, auth_token, scopes) => {
     // fetch strava user access_token / refresh_token
     const reqConfig = {
         method: "POST",
@@ -128,6 +128,7 @@ const exchangeAuthToken = async (uid, auth_token) => {
         strava_access_token: stravaResponse.data.access_token,
         strava_refresh_token: stravaResponse.data.refresh_token,
         strava_uid: _.toString(stravaResponse.data.athlete.id),
+        strava_oauth_allows: scopes ? scopes.split(',') : []
     }
 
     // update user data in mongo

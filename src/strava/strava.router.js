@@ -182,8 +182,9 @@ stravaRouter.post('/webhook_delete', validateAccessToken, requireAdmin, async (r
 stravaRouter.post("/exchange_token", validateAccessToken, async (req, res) => {
     try {
         const auth_token = req.body.auth_token;
+        const scopes = req.body.scopes;
         const user_id = req.auth.payload.sub;
-        await stravaApi.exchangeAuthToken(user_id, auth_token);
+        await stravaApi.exchangeAuthToken(user_id, auth_token, scopes);
         // Clear any disconnection warning now that user has reconnected
         await auth0Service.clearDisconnectedService(user_id, 'strava');
         res.status(200).json({ message: 'success' });
