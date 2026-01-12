@@ -2,6 +2,7 @@ const mongoUserDb = require("../mongodb/user.repository");
 const axios = require("axios");
 const stravaClientId = process.env.STRAVA_CLIENT_ID
 const _ = require('lodash');
+const TokenRevokedException = require('../errors/TokenRevokedException');
 
 async function getUser(strava_id) {
     const stravaTokens = await mongoUserDb.getUserTokensByService("strava", strava_id)
@@ -30,10 +31,22 @@ const sendApiRequest = async (strava_uid, reqConfig, tokens) => {
     catch (error) {
         // if access token expired, try to exchange refresh token
         if (error.response?.status === 401) {
-            const newTokens = await exchangeRefreshToken(strava_uid, tokens.refresh_token)
-            reqConfig.headers["authorization"] = "Bearer " + newTokens.access_token
-            const response = await axios(reqConfig)
-            return response
+            try {
+                const newTokens = await exchangeRefreshToken(strava_uid, tokens.refresh_token)
+                reqConfig.headers["authorization"] = "Bearer " + newTokens.access_token
+                const response = await axios(reqConfig)
+                return response
+            } catch (refreshError) {
+                // If token was revoked, clean up the connection
+                if (refreshError.name === 'TokenRevokedException') {
+                    const user = await mongoUserDb.getUser('strava', strava_uid);
+                    if (user?.auth0_uid) {
+                        await mongoUserDb.deleteAppConnections(user.auth0_uid, 'strava');
+                        console.log(`Strava access revoked for user ${strava_uid}, disconnected`);
+                    }
+                }
+                throw refreshError;
+            }
         }
         else {
             throw error
@@ -217,7 +230,17 @@ const exchangeRefreshToken = async (strava_uid, refresh_token) => {
         }
     }
 
-    const response = await axios(reqConfig)
+    let response;
+    try {
+        response = await axios(reqConfig);
+    } catch (error) {
+        // Check for definitive revocation (401 with 'invalid' code)
+        const errorCode = error.response?.data?.errors?.[0]?.code;
+        if (error.response?.status === 401 && errorCode === 'invalid') {
+            throw new TokenRevokedException('strava', strava_uid);
+        }
+        throw error;
+    }
 
     // Parse response
     const new_tokens = {

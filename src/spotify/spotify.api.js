@@ -2,6 +2,7 @@ const mongoUserDb = require("../mongodb/user.repository");
 const axios = require('axios')
 const spotifyClientId = process.env.SPOTIFY_CLIENT_ID
 const _ = require('lodash');
+const TokenRevokedException = require('../errors/TokenRevokedException');
 
 const getUser = async (uid, tokens) => {
     if (!tokens) {
@@ -37,8 +38,17 @@ const exchangeRefreshToken = async (spotify_uid, refresh_token) => {
         }
     }
 
-    // exchange tokens
-    const response = await axios(reqConfig)
+    let response;
+    try {
+        response = await axios(reqConfig);
+    } catch (error) {
+        // Check for definitive revocation (user revoked access or changed password)
+        if (error.response?.status === 400 &&
+            error.response?.data?.error === 'invalid_grant') {
+            throw new TokenRevokedException('spotify', spotify_uid);
+        }
+        throw error;
+    }
 
     const userUpdate = {
         spotify_refresh_token: _.get(response, 'data.refresh_token', refresh_token),
@@ -113,10 +123,22 @@ const sendApiRequest = async (uid, reqConfig, tokens) => {
     }
     catch (error) {
         if (error.response?.status === 401) {
-            const newTokens = await exchangeRefreshToken(uid, tokens.refresh_token)
-            reqConfig.headers["authorization"] = "Bearer " + newTokens.access_token
-            const response = await axios(reqConfig)
-            return response
+            try {
+                const newTokens = await exchangeRefreshToken(uid, tokens.refresh_token)
+                reqConfig.headers["authorization"] = "Bearer " + newTokens.access_token
+                const response = await axios(reqConfig)
+                return response
+            } catch (refreshError) {
+                // If token was revoked, clean up the connection
+                if (refreshError.name === 'TokenRevokedException') {
+                    const user = await mongoUserDb.getUser('spotify', uid);
+                    if (user?.auth0_uid) {
+                        await mongoUserDb.deleteAppConnections(user.auth0_uid, 'spotify');
+                        console.log(`Spotify access revoked for user ${uid}, disconnected`);
+                    }
+                }
+                throw refreshError;
+            }
         }
         else {
             throw error
