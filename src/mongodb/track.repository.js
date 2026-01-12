@@ -32,7 +32,14 @@ const upsertTrack = async (trackData) => {
         { upsert: true, returnDocument: 'after' }
     );
 
-    return result;
+    // MongoDB 4.x driver returns { value: document } structure
+    const track = result.value || result;
+
+    if (!track || !track._id) {
+        throw new Error('Failed to upsert track - no document returned');
+    }
+
+    return track;
 };
 
 /**
