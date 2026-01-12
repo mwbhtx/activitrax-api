@@ -63,4 +63,64 @@ spotifyRouter.post("/exchange_token", validateAccessToken, async (req, res) => {
     }
 });
 
+spotifyRouter.get('/playlists', validateAccessToken, async (req, res) => {
+    try {
+        const user_id = req.auth.payload.sub;
+        const userProfile = await mongoUserDb.getUser("auth0", user_id);
+
+        // Check if user has playlist permissions
+        const allowedScopes = userProfile.spotify_oauth_allows || [];
+        if (!allowedScopes.includes('playlist-modify-private')) {
+            return res.status(403).json({
+                message: 'insufficient_scope',
+                required_scope: 'playlist-modify-private'
+            });
+        }
+
+        const playlists = await spotifyApi.getUserPlaylists(userProfile.spotify_uid, {
+            access_token: userProfile.spotify_access_token,
+            refresh_token: userProfile.spotify_refresh_token
+        });
+        res.status(200).json(playlists);
+    } catch (error) {
+        const error_message = _.get(error, 'response.data');
+        console.log(JSON.stringify(error_message) || error);
+        res.status(500).json({ message: 'server error' });
+    }
+});
+
+spotifyRouter.post('/playlists/:playlistId/tracks', validateAccessToken, async (req, res) => {
+    try {
+        const user_id = req.auth.payload.sub;
+        const playlistId = req.params.playlistId;
+        const trackUri = req.body.track_uri;
+
+        if (!trackUri) {
+            return res.status(400).json({ message: 'track_uri is required' });
+        }
+
+        const userProfile = await mongoUserDb.getUser("auth0", user_id);
+
+        // Check if user has playlist permissions
+        const allowedScopes = userProfile.spotify_oauth_allows || [];
+        if (!allowedScopes.includes('playlist-modify-private')) {
+            return res.status(403).json({
+                message: 'insufficient_scope',
+                required_scope: 'playlist-modify-private'
+            });
+        }
+
+        await spotifyApi.addTrackToPlaylist(userProfile.spotify_uid, {
+            access_token: userProfile.spotify_access_token,
+            refresh_token: userProfile.spotify_refresh_token
+        }, playlistId, trackUri);
+
+        res.status(200).json({ message: 'success' });
+    } catch (error) {
+        const error_message = _.get(error, 'response.data');
+        console.log(JSON.stringify(error_message) || error);
+        res.status(500).json({ message: 'server error' });
+    }
+});
+
 module.exports = { spotifyRouter };
