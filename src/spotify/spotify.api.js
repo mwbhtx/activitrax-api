@@ -146,9 +146,63 @@ const sendApiRequest = async (uid, reqConfig, tokens) => {
     }
 }
 
+const getUserPlaylists = async (uid, tokens) => {
+    if (!tokens) {
+        tokens = await mongoUserDb.getUserTokensByService("spotify", uid)
+    }
+
+    const reqConfig = {
+        method: "GET",
+        url: "https://api.spotify.com/v1/me/playlists",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + tokens.access_token
+        },
+        params: {
+            limit: 50
+        }
+    }
+
+    const response = await sendApiRequest(uid, reqConfig, tokens)
+
+    // Return simplified playlist objects
+    const playlists = _.get(response, 'data.items', []).map(playlist => ({
+        id: playlist.id,
+        name: playlist.name,
+        image: playlist.images?.[0]?.url || null,
+        tracks_count: playlist.tracks?.total || 0,
+        owner: playlist.owner?.display_name || 'Unknown'
+    }));
+
+    return playlists;
+}
+
+const addTrackToPlaylist = async (uid, tokens, playlistId, trackUri) => {
+    if (!tokens) {
+        tokens = await mongoUserDb.getUserTokensByService("spotify", uid)
+    }
+
+    const reqConfig = {
+        method: "POST",
+        url: `https://api.spotify.com/v1/playlists/${playlistId}/tracks`,
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + tokens.access_token
+        },
+        data: {
+            uris: [trackUri]
+        }
+    }
+
+    const response = await sendApiRequest(uid, reqConfig, tokens)
+    return response.data;
+}
+
 module.exports = {
     sendApiRequest,
     getUser,
     getTracklist,
     exchangeRefreshToken,
+    getUserPlaylists,
+    addTrackToPlaylist,
 };
