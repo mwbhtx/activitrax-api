@@ -71,8 +71,8 @@ const getUserConfigForClient = async (auth0_uid) => {
     // Return persisted disconnected services from database
     userConfig.disconnected_services = _.get(userProfile, 'disconnected_services', []);
 
-    // User preferences (default to true if not set)
-    userConfig.strava_description_enabled = _.get(userProfile, "strava_description_enabled", true);
+    // User preferences (default to false if not set)
+    userConfig.strava_description_enabled = _.get(userProfile, "strava_description_enabled", false);
 
     return userConfig;
 }

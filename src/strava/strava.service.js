@@ -85,8 +85,8 @@ const processActivity = async (strava_uid, activity_id) => {
         track_count: trackList.length
     });
 
-    // Check if user has Strava description updates enabled (default to true)
-    const stravaDescriptionEnabled = _.get(userData, 'strava_description_enabled', true);
+    // Check if user has Strava description updates enabled (default to false)
+    const stravaDescriptionEnabled = _.get(userData, 'strava_description_enabled', false);
 
     if (!stravaDescriptionEnabled) {
         // User has disabled Strava description updates, mark as success without updating
