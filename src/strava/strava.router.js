@@ -112,10 +112,16 @@ stravaRouter.post('/webhook_callback', async (req, res) => {
             return;
         }
 
-        if (aspect_type === 'create' && object_type === 'activity') {
-            // Fire and forget - don't await, to ensure 200 is returned immediately
-            stravaService.processActivity(owner_id, object_id)
-                .catch(err => console.error('processActivity failed:', err));
+        if (object_type === 'activity') {
+            if (aspect_type === 'create') {
+                // Fire and forget - don't await, to ensure 200 is returned immediately
+                stravaService.processActivity(owner_id, object_id)
+                    .catch(err => console.error('processActivity failed:', err));
+            } else if (aspect_type === 'update') {
+                // Handle activity updates (privacy, title, type changes)
+                stravaService.handleActivityUpdate(user.auth0_uid, object_id, updates)
+                    .catch(err => console.error('handleActivityUpdate failed:', err));
+            }
         }
     }
     catch (error) {

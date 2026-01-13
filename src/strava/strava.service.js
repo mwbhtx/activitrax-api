@@ -139,8 +139,42 @@ const reprocessLastStravaActivity = async (strava_uid) => {
     }
 }
 
+const handleActivityUpdate = async (auth0_uid, activity_id, updates) => {
+    if (!updates || Object.keys(updates).length === 0) {
+        console.log(`Activity ${activity_id}: no updates provided`);
+        return;
+    }
+
+    console.log(`Activity ${activity_id}: processing updates:`, updates);
+
+    const activityUpdates = {};
+
+    // Handle privacy changes
+    if (updates.private !== undefined) {
+        // Strava sends "true" or "false" as strings
+        activityUpdates.private = updates.private === 'true';
+        console.log(`Activity ${activity_id}: privacy changed to ${activityUpdates.private ? 'private' : 'public'}`);
+    }
+
+    // Handle title changes
+    if (updates.title !== undefined) {
+        activityUpdates.name = updates.title;
+        console.log(`Activity ${activity_id}: title updated`);
+    }
+
+    // Handle type changes
+    if (updates.type !== undefined) {
+        activityUpdates.type = updates.type;
+        console.log(`Activity ${activity_id}: type changed to ${updates.type}`);
+    }
+
+    // Update the activity in the database
+    await mongoActivityDb.updateActivity(auth0_uid, activity_id, activityUpdates);
+}
+
 module.exports = {
     processActivity,
     reprocessLastStravaActivity,
+    handleActivityUpdate,
     ACTIVITY_STATUS
 };
