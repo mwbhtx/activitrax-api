@@ -11,6 +11,7 @@ const { auth0Router } = require("./auth0/auth0.router");
 const { stravaRouter } = require("./strava/strava.router");
 const { spotifyRouter } = require("./spotify/spotify.router");
 const { userRouter } = require("./user/user.router");
+const { feedbackRouter } = require("./feedback/feedback.router");
 
 const PORT = process.env.PORT || 4000;
 
@@ -55,6 +56,7 @@ apiRouter.use("/auth0", auth0Router);
 apiRouter.use("/strava", stravaRouter);
 apiRouter.use("/spotify", spotifyRouter);
 apiRouter.use("/user", userRouter);
+apiRouter.use("/feedback", feedbackRouter);
 
 app.use(errorHandler);
 app.use(notFoundHandler);
