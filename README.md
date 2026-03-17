@@ -1,9 +1,30 @@
-### 🚴‍♂️ activitrax-api
-[https://activitrax.app](https://activitrax.app)
+# activitrax-api
 
----
+**Live app:** [activitrax.app](https://activitrax.app)
 
-### 🛠️ Local Development Setup
+REST API that connects Strava and Spotify — automatically captures the music you listened to during a workout and saves it as a tracklist for each activity.
+
+### How it works
+
+1. User connects their Strava + Spotify accounts via OAuth2
+2. Strava fires a webhook when an activity is completed
+3. API fetches the songs played during that time window from Spotify
+4. Tracklist is saved and optionally written back to the Strava activity description
+
+### Built with
+
+Node.js · Express · MongoDB · Auth0 · Strava API · Spotify API
+
+### Features
+
+- OAuth2 integration with Strava and Spotify (token refresh + revocation handling)
+- Real-time webhook processing for new activities
+- Liked tracks system
+- Role-based access control (user/admin)
+- In-app feedback and support system
+
+<details>
+<summary><h3>Local Development</h3></summary>
 
 #### 1. Create a `.env` file in the project root:
 
@@ -22,6 +43,8 @@ STRAVA_CLIENT_ID=strava-client-id
 STRAVA_CLIENT_SECRET=strava-client-secret
 STRAVA_CALLBACK_URL=https://your-tunnel-subdomain.trycloudflare.com/api/v1/strava/webhook_callback
 STRAVA_WEBHOOK_VERIFICATION_TOKEN=strava-webhook-verify-token
+STRAVA_WEBHOOK_SUBSCRIPTION_ID=strava-webhook-subscription-id
+ADMIN_AUTH0_UID=your-auth0-user-id
 ```
 
 ---
@@ -83,3 +106,5 @@ To test API endpoints locally with Postman, you need to set up OAuth 2.0 authent
 ```bash
 npm run dev
 ```
+
+</details>
