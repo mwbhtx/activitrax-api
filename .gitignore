@@ -143,3 +143,6 @@ dist
 
 # Security audit files
 SECURITY_ISSUES.md
+
+# Internal docs
+docs/
