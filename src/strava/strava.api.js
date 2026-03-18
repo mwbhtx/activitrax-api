@@ -3,6 +3,7 @@ const axios = require("axios");
 const stravaClientId = process.env.STRAVA_CLIENT_ID
 const _ = require('lodash');
 const TokenRevokedException = require('../errors/TokenRevokedException');
+const logger = require('../logger');
 
 async function getUser(strava_id) {
     const stravaTokens = await mongoUserDb.getUserTokensByService("strava", strava_id)
@@ -42,7 +43,7 @@ const sendApiRequest = async (strava_uid, reqConfig, tokens) => {
                     const user = await mongoUserDb.getUser('strava', strava_uid);
                     if (user?.auth0_uid) {
                         await mongoUserDb.deleteAppConnections(user.auth0_uid, 'strava');
-                        console.log(`Strava access revoked for user ${strava_uid}, disconnected`);
+                        logger.info({ strava_uid }, 'Strava access revoked, disconnected');
                     }
                 }
                 throw refreshError;

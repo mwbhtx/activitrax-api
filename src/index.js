@@ -12,6 +12,7 @@ const { stravaRouter } = require("./strava/strava.router");
 const { spotifyRouter } = require("./spotify/spotify.router");
 const { userRouter } = require("./user/user.router");
 const { feedbackRouter } = require("./feedback/feedback.router");
+const logger = require("./logger");
 
 const PORT = process.env.PORT || 4000;
 
@@ -62,5 +63,5 @@ app.use(errorHandler);
 app.use(notFoundHandler);
 
 app.listen(PORT, () => {
-  console.log(`Listening on port ${PORT}`);
+  logger.info(`Listening on port ${PORT}`);
 });

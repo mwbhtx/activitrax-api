@@ -5,8 +5,8 @@ const mongoActivityDb = require("../mongodb/activity.repository");
 const mongoTracklistDb = require("../mongodb/tracklist.repository");
 const mongoUserDb = require("../mongodb/user.repository");
 const auth0Service = require("../auth0/auth0.service");
-const _ = require('lodash');
 const stravaApi = require('../strava/strava.api.js');
+const logger = require('../logger');
 const likedTracksRepository = require("../mongodb/liked_tracks.repository");
 
 /*
@@ -20,8 +20,7 @@ userRouter.get('/activities', validateAccessToken, async (req, res) => {
         const activities = await mongoActivityDb.getActivities(user_id);
         res.status(200).json(activities);
     } catch (error) {
-        const error_message = _.get(error, 'response.data');
-        console.log(JSON.stringify(error_message) || error);
+        logger.error({ err: error }, 'request failed');
         res.status(500).json({ message: 'server error' });
     }
 });
@@ -32,8 +31,7 @@ userRouter.get('/tracklist/:activityId', validateAccessToken, async (req, res) =
         const tracklist = await mongoTracklistDb.getTracklist(activity_id);
         res.status(200).json(tracklist?.tracklist || []);
     } catch (error) {
-        const error_message = _.get(error, 'response.data');
-        console.log(JSON.stringify(error_message) || error);
+        logger.error({ err: error }, 'request failed');
         res.status(500).json({ message: 'server error' });
     }
 });
@@ -45,8 +43,7 @@ userRouter.get('/config', validateAccessToken, async (req, res) => {
         config.is_admin = isAdmin(req);
         res.status(200).json(config);
     } catch (error) {
-        const error_message = _.get(error, 'response.data');
-        console.log(JSON.stringify(error_message) || error);
+        logger.error({ err: error }, 'request failed');
         res.status(500).json({ message: 'server error' });
     }
 });
@@ -72,8 +69,7 @@ userRouter.patch('/config', validateAccessToken, async (req, res) => {
 
         res.status(200).json({ message: 'success' });
     } catch (error) {
-        const error_message = _.get(error, 'response.data');
-        console.log(JSON.stringify(error_message) || error);
+        logger.error({ err: error }, 'request failed');
         res.status(500).json({ message: 'server error' });
     }
 });
@@ -84,7 +80,7 @@ userRouter.post('/validate-connections', validateAccessToken, async (req, res) =
         const result = await auth0Service.validateConnections(user_id);
         res.status(200).json(result);
     } catch (error) {
-        console.log(error);
+        logger.error({ err: error }, 'request failed');
         res.status(500).json({ message: 'server error' });
     }
 });
@@ -102,7 +98,7 @@ userRouter.post('/disconnect', validateAccessToken, async (req, res) => {
                 try {
                     await stravaApi.deauthorizeUser(userProfile.strava_access_token);
                 } catch (deauthError) {
-                    console.log('Strava deauthorization failed (token may already be revoked):', deauthError.message);
+                    logger.warn({ err: deauthError }, 'Strava deauthorization failed (token may already be revoked)');
                 }
             }
         }
@@ -110,8 +106,7 @@ userRouter.post('/disconnect', validateAccessToken, async (req, res) => {
         await mongoUserDb.deleteAppConnections(uid, service);
         res.status(200).json({ message: 'success' });
     } catch (error) {
-        const error_message = _.get(error, 'response.data');
-        console.log(JSON.stringify(error_message) || error);
+        logger.error({ err: error }, 'request failed');
         res.status(500).json({ message: 'server error' });
     }
 });
@@ -129,7 +124,7 @@ userRouter.post('/liked-tracks', validateAccessToken, async (req, res) => {
         const result = await likedTracksRepository.likeTrack(uid, trackData);
         res.status(200).json(result);
     } catch (error) {
-        console.log(error);
+        logger.error({ err: error }, 'request failed');
         res.status(500).json({ message: 'server error' });
     }
 });
@@ -142,7 +137,7 @@ userRouter.get('/liked-tracks/ids', validateAccessToken, async (req, res) => {
         const likedTrackIds = await likedTracksRepository.getLikedTrackIds(uid);
         res.status(200).json({ liked_track_ids: likedTrackIds });
     } catch (error) {
-        console.log(error);
+        logger.error({ err: error }, 'request failed');
         res.status(500).json({ message: 'server error' });
     }
 });
@@ -156,7 +151,7 @@ userRouter.delete('/liked-tracks/:spotify_track_id', validateAccessToken, async 
         const result = await likedTracksRepository.unlikeTrack(uid, spotify_track_id);
         res.status(200).json(result);
     } catch (error) {
-        console.log(error);
+        logger.error({ err: error }, 'request failed');
         res.status(500).json({ message: 'server error' });
     }
 });
@@ -168,7 +163,7 @@ userRouter.get('/liked-tracks', validateAccessToken, async (req, res) => {
         const tracks = await likedTracksRepository.getLikedTracksWithMetadata(uid);
         res.status(200).json({ tracks });
     } catch (error) {
-        console.log(error);
+        logger.error({ err: error }, 'request failed');
         res.status(500).json({ message: 'server error' });
     }
 });

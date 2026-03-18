@@ -4,6 +4,7 @@ const spotifyApi = require("../spotify/spotify.api");
 const mongoTracklistDb = require("../mongodb/tracklist.repository");
 const mongoActivityDb = require("../mongodb/activity.repository");
 const _ = require('lodash');
+const logger = require('../logger');
 
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -37,7 +38,6 @@ const processActivity = async (strava_uid, activity_id) => {
 
     // Check if user has Spotify connected
     if (!userData?.spotify_uid || !userData?.spotify_access_token) {
-        console.log(`Activity ${activity_id}: user ${strava_uid} has no Spotify connected`);
         await mongoActivityDb.updateActivity(auth0_uid, activity.id, {
             processing_status: ACTIVITY_STATUS.NO_SPOTIFY
         });
@@ -60,7 +60,7 @@ const processActivity = async (strava_uid, activity_id) => {
     try {
         trackList = await spotifyApi.getTracklist(spotify_uid, spotifyTokens, startDateTimeMillis, endDateTimeMillis);
     } catch (err) {
-        console.error(`Activity ${activity_id}: Spotify API error:`, err);
+        logger.error({ err, activity_id }, 'Spotify API error');
         await mongoActivityDb.updateActivity(auth0_uid, activity.id, {
             processing_status: ACTIVITY_STATUS.SPOTIFY_ERROR,
             processing_error: err.message || 'Unknown Spotify error'
@@ -70,7 +70,6 @@ const processActivity = async (strava_uid, activity_id) => {
 
     // Check if any tracks were found
     if (trackList.length === 0) {
-        console.log(`Activity ${activity_id}: no Spotify tracks found in time range`);
         await mongoActivityDb.updateActivity(auth0_uid, activity.id, {
             processing_status: ACTIVITY_STATUS.NO_TRACKS
         });
@@ -89,8 +88,6 @@ const processActivity = async (strava_uid, activity_id) => {
     const stravaDescriptionEnabled = _.get(userData, 'strava_description_enabled', false);
 
     if (!stravaDescriptionEnabled) {
-        // User has disabled Strava description updates, mark as success without updating
-        console.log(`Activity ${activity_id}: Strava description disabled by user preference`);
         await mongoActivityDb.updateActivity(auth0_uid, activity.id, {
             processing_status: ACTIVITY_STATUS.SUCCESS
         });
@@ -123,7 +120,7 @@ const processActivity = async (strava_uid, activity_id) => {
             processing_status: ACTIVITY_STATUS.SUCCESS
         });
     } catch (err) {
-        console.error('Failed to update Strava activity description:', err);
+        logger.error({ err, activity_id }, 'failed to update Strava activity description');
         await mongoActivityDb.updateActivity(auth0_uid, activity.id, {
             processing_status: ACTIVITY_STATUS.STRAVA_UPDATE_ERROR,
             processing_error: err.message || 'Unknown Strava error'
@@ -141,11 +138,8 @@ const reprocessLastStravaActivity = async (strava_uid) => {
 
 const handleActivityUpdate = async (auth0_uid, activity_id, updates) => {
     if (!updates || Object.keys(updates).length === 0) {
-        console.log(`Activity ${activity_id}: no updates provided`);
         return;
     }
-
-    console.log(`Activity ${activity_id}: processing updates:`, updates);
 
     const activityUpdates = {};
 
@@ -153,19 +147,16 @@ const handleActivityUpdate = async (auth0_uid, activity_id, updates) => {
     if (updates.private !== undefined) {
         // Strava sends "true" or "false" as strings
         activityUpdates.private = updates.private === 'true';
-        console.log(`Activity ${activity_id}: privacy changed to ${activityUpdates.private ? 'private' : 'public'}`);
     }
 
     // Handle title changes
     if (updates.title !== undefined) {
         activityUpdates.name = updates.title;
-        console.log(`Activity ${activity_id}: title updated`);
     }
 
     // Handle type changes
     if (updates.type !== undefined) {
         activityUpdates.type = updates.type;
-        console.log(`Activity ${activity_id}: type changed to ${updates.type}`);
     }
 
     // Update the activity in the database

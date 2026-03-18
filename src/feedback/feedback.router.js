@@ -2,7 +2,7 @@ const express = require("express");
 const { validateAccessToken, isAdmin, requireAdmin } = require("../middleware/auth0.middleware");
 const feedbackRouter = express.Router();
 const feedbackRepository = require("../mongodb/feedback.repository");
-const _ = require('lodash');
+const logger = require('../logger');
 
 /*
  * Feedback Router
@@ -43,7 +43,7 @@ feedbackRouter.get('/topics', validateAccessToken, async (req, res) => {
 
         res.status(200).json(result);
     } catch (error) {
-        console.error('Error getting topics:', error);
+        logger.error({ err: error }, 'failed to get topics');
         res.status(500).json({ message: 'server error' });
     }
 });
@@ -71,7 +71,7 @@ feedbackRouter.post('/topics', validateAccessToken, async (req, res) => {
         const topic = await feedbackRepository.createTopic(user_id, { title, description, category });
         res.status(201).json(topic);
     } catch (error) {
-        console.error('Error creating topic:', error);
+        logger.error({ err: error }, 'failed to create topic');
         res.status(500).json({ message: 'server error' });
     }
 });
@@ -103,7 +103,7 @@ feedbackRouter.get('/topics/:topic_id', validateAccessToken, async (req, res) =>
 
         res.status(200).json({ topic, replies });
     } catch (error) {
-        console.error('Error getting topic:', error);
+        logger.error({ err: error }, 'failed to get topic');
         res.status(500).json({ message: 'server error' });
     }
 });
@@ -124,7 +124,7 @@ feedbackRouter.patch('/topics/:topic_id/status', validateAccessToken, requireAdm
         await feedbackRepository.updateTopicStatus(topic_id, status);
         res.status(200).json({ message: 'Status updated' });
     } catch (error) {
-        console.error('Error updating topic status:', error);
+        logger.error({ err: error }, 'failed to update topic status');
         res.status(500).json({ message: 'server error' });
     }
 });
@@ -140,7 +140,7 @@ feedbackRouter.delete('/topics/:topic_id', validateAccessToken, requireAdmin, as
         await feedbackRepository.deleteTopic(topic_id);
         res.status(200).json({ message: 'Topic deleted' });
     } catch (error) {
-        console.error('Error deleting topic:', error);
+        logger.error({ err: error }, 'failed to delete topic');
         res.status(500).json({ message: 'server error' });
     }
 });
@@ -176,7 +176,7 @@ feedbackRouter.post('/topics/:topic_id/replies', validateAccessToken, async (req
         const reply = await feedbackRepository.createReply(user_id, topic_id, content, admin);
         res.status(201).json(reply);
     } catch (error) {
-        console.error('Error creating reply:', error);
+        logger.error({ err: error }, 'failed to create reply');
         res.status(500).json({ message: 'server error' });
     }
 });
@@ -192,7 +192,7 @@ feedbackRouter.delete('/replies/:reply_id', validateAccessToken, requireAdmin, a
         await feedbackRepository.deleteReply(reply_id);
         res.status(200).json({ message: 'Reply deleted' });
     } catch (error) {
-        console.error('Error deleting reply:', error);
+        logger.error({ err: error }, 'failed to delete reply');
         res.status(500).json({ message: 'server error' });
     }
 });
@@ -209,7 +209,7 @@ feedbackRouter.get('/unread-count', validateAccessToken, async (req, res) => {
         const count = await feedbackRepository.getUnreadCount(user_id, admin);
         res.status(200).json({ count });
     } catch (error) {
-        console.error('Error getting unread count:', error);
+        logger.error({ err: error }, 'failed to get unread count');
         res.status(500).json({ message: 'server error' });
     }
 });
@@ -238,7 +238,7 @@ feedbackRouter.post('/topics/:topic_id/mark-read', validateAccessToken, async (r
         await feedbackRepository.markAsRead(topic_id, admin);
         res.status(200).json({ message: 'Topic marked as read' });
     } catch (error) {
-        console.error('Error marking topic as read:', error);
+        logger.error({ err: error }, 'failed to mark topic as read');
         res.status(500).json({ message: 'server error' });
     }
 });

@@ -2,6 +2,7 @@ const stravaApi = require('../strava/strava.api.js');
 const spotifyApi = require('../spotify/spotify.api.js');
 const mongoUserDb = require('../mongodb/user.repository.js');
 const _ = require('lodash');
+const logger = require('../logger');
 
 /**
  * Validates that a connected service's tokens are still valid.
@@ -22,13 +23,13 @@ const validateServiceConnection = async (auth0_uid, service, serviceUid, tokens)
         // If TokenRevokedException, the sendApiRequest already cleaned up the tokens
         // Now record this disconnection so we can show a persistent warning
         if (error.name === 'TokenRevokedException') {
-            console.log(`${service} token revoked for user ${auth0_uid}, disconnected at login`);
+            logger.info({ auth0_uid, service }, 'token revoked, disconnected at login');
             await addDisconnectedService(auth0_uid, service);
             return { valid: false, revoked: true };
         }
         // For other errors (network issues, rate limits), assume still connected
         // We don't want to disconnect users due to temporary service issues
-        console.log(`${service} validation error (not disconnecting):`, error.message);
+        logger.warn({ err: error, service }, 'validation error (not disconnecting)');
         return { valid: true, revoked: false };
     }
 };

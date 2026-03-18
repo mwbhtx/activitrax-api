@@ -3,6 +3,7 @@ const axios = require('axios')
 const spotifyClientId = process.env.SPOTIFY_CLIENT_ID
 const _ = require('lodash');
 const TokenRevokedException = require('../errors/TokenRevokedException');
+const logger = require('../logger');
 
 const getUser = async (uid, tokens) => {
     if (!tokens) {
@@ -134,7 +135,7 @@ const sendApiRequest = async (uid, reqConfig, tokens) => {
                     const user = await mongoUserDb.getUser('spotify', uid);
                     if (user?.auth0_uid) {
                         await mongoUserDb.deleteAppConnections(user.auth0_uid, 'spotify');
-                        console.log(`Spotify access revoked for user ${uid}, disconnected`);
+                        logger.info({ spotify_uid: uid }, 'Spotify access revoked, disconnected');
                     }
                 }
                 throw refreshError;

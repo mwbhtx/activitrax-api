@@ -1,11 +1,11 @@
 const express = require("express");
 const { validateAccessToken, isAdmin } = require("../middleware/auth0.middleware");
 const spotifyRouter = express.Router();
-const _ = require('lodash');
 const spotifyApi = require("./spotify.api");
 const spotifyService = require("./spotify.service");
 const mongoUserDb = require('../mongodb/user.repository.js');
 const auth0Service = require('../auth0/auth0.service.js');
+const logger = require('../logger');
 
 spotifyRouter.get('/user_profile', validateAccessToken, async (req, res) => {
     try {
@@ -23,8 +23,7 @@ spotifyRouter.get('/user_profile', validateAccessToken, async (req, res) => {
         res.status(200).json(user_profile);
     }
     catch (error) {
-        const error_message = _.get(error, 'response.data');
-        console.log(JSON.stringify(error_message) || error);
+        logger.error({ err: error }, 'request failed');
         res.status(500).json({ message: 'server error' });
     }
 })
@@ -41,8 +40,7 @@ spotifyRouter.get('/tracklist', validateAccessToken, async (req, res) => {
         }, start_time, end_time);
         res.status(200).json(tracks);
     } catch (error) {
-        const error_message = _.get(error, 'response.data');
-        console.log(JSON.stringify(error_message) || error);
+        logger.error({ err: error }, 'request failed');
         res.status(500).json({ message: 'server error' });
     }
 });
@@ -57,8 +55,7 @@ spotifyRouter.post("/exchange_token", validateAccessToken, async (req, res) => {
         await auth0Service.clearDisconnectedService(user_id, 'spotify');
         res.status(200).json({ message: 'success' });
     } catch (error) {
-        const error_message = _.get(error, 'response.data');
-        console.log(JSON.stringify(error_message) || error);
+        logger.error({ err: error }, 'request failed');
         res.status(500).json({ message: 'server error' });
     }
 });
@@ -83,8 +80,7 @@ spotifyRouter.get('/playlists', validateAccessToken, async (req, res) => {
         });
         res.status(200).json(playlists);
     } catch (error) {
-        const error_message = _.get(error, 'response.data');
-        console.log(JSON.stringify(error_message) || error);
+        logger.error({ err: error }, 'request failed');
         res.status(500).json({ message: 'server error' });
     }
 });
@@ -117,8 +113,7 @@ spotifyRouter.post('/playlists/:playlistId/tracks', validateAccessToken, async (
 
         res.status(200).json({ message: 'success' });
     } catch (error) {
-        const error_message = _.get(error, 'response.data');
-        console.log(JSON.stringify(error_message) || error);
+        logger.error({ err: error }, 'request failed');
         res.status(500).json({ message: 'server error' });
     }
 });
