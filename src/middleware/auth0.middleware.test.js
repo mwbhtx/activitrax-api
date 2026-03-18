@@ -1,3 +1,7 @@
+jest.mock('express-oauth2-jwt-bearer', () => ({
+  auth: jest.fn(() => jest.fn()),
+}));
+
 const { isAdmin } = require('./auth0.middleware');
 
 const ROLES_CLAIM = 'https://activitrax.app/roles';
